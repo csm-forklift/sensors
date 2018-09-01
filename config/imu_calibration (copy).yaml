@@ -1,0 +1,15 @@
+# Calibration parameters for the IMU
+# These values are loaded with the imu_calibration.launch file
+# and can then be put onto the IMU.
+
+accel_offset_x: -3
+accel_offset_y: -25
+accel_offset_z: 25
+accel_radius: 1000
+gyro_offset_x: -2
+gyro_offset_y: -2
+gyro_offset_z: 1
+mag_offset_x: -68
+mag_offset_y: 187
+mag_offset_z: -272
+mag_radius: 1170
