@@ -8,10 +8,10 @@ file if the status is all 3's (meaning, fully calibrated).'''
 import rospy
 import rospkg
 from sensor_msgs.msg import Imu
-from encoders.msg import ImuArray
-from encoders.msg import ImuMag
-from encoders.msg import ImuCalibration
-from encoders.msg import ImuCalibStatus
+from sensors.msg import ImuArray
+from sensors.msg import ImuMag
+from sensors.msg import ImuCalibration
+from sensors.msg import ImuCalibStatus
 from geometry_msgs.msg import Vector3Stamped
 from tf.broadcaster import TransformBroadcaster
 from tf.listener import TransformListener
@@ -47,9 +47,9 @@ class ImuRead():
         # Parameters for checking and storing calibration data
         self.last_save_time = time()
         self.calibration = ImuCalibration()
-        # Obtain the filepath for the IMU package (currently in 'encoders')
+        # Obtain the filepath for the IMU package (currently in 'sensors')
         rospack = rospkg.RosPack()
-        self.package_path = rospack.get_path('encoders')
+        self.package_path = rospack.get_path('sensors')
         self.imu_calib_filename = rospy.get_param("/imu/calib_filename", self.package_path + "/config/imu_calibration.yaml")
 
         # Procedure
