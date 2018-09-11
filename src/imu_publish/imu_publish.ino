@@ -1,8 +1,8 @@
 // ROS Includes
 #include <ros.h>
-#include <encoders/ImuArray.h>
-#include <encoders/ImuMag.h>
-#include <encoders/ImuCalibStatus.h>
+#include <sensors/ImuArray.h>
+#include <sensors/ImuMag.h>
+#include <sensors/ImuCalibStatus.h>
 
 // IMU Includes
 #include <Wire.h>
@@ -13,11 +13,11 @@
 
 ros::NodeHandle nh;
 
-encoders::ImuArray imu_data;
+sensors::ImuArray imu_data;
 ros::Publisher imu_pub("imu/data_array", &imu_data);
-encoders::ImuMag imu_mag;
+sensors::ImuMag imu_mag;
 ros::Publisher mag_pub("imu/mag_array", &imu_mag);
-encoders::ImuCalibStatus imu_calib_status;
+sensors::ImuCalibStatus imu_calib_status;
 ros::Publisher imu_status_pub("imu/status", &imu_calib_status);
 
 Adafruit_BNO055 bno = Adafruit_BNO055(55);

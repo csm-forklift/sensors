@@ -1,6 +1,6 @@
 // ROS Includes
 #include <ros.h>
-#include <encoders/ImuArray.h>
+#include <sensors/ImuArray.h>
 #include <std_msgs/Int16.h>
 
 // IMU Includes
@@ -27,7 +27,7 @@ std_msgs::Int16 lwheel_msg;
 ros::Publisher rwheel_pub("enc/wheel_right_ticks", &rwheel_msg);
 ros::Publisher lwheel_pub("enc/wheel_left_ticks", &lwheel_msg);
 // IMU
-encoders::ImuArray imuData;
+sensors::ImuArray imuData;
 ros::Publisher imu_pub("imu/raw_data", &imuData);
 
 // IMU Objects

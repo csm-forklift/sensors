@@ -18,9 +18,9 @@
 
 // ROS Includes
 #include <ros.h>
-#include <encoders/ImuArray.h>
-#include <encoders/ImuMag.h>
-#include <encoders/ImuCalibStatus.h>
+#include <sensors/ImuArray.h>
+#include <sensors/ImuMag.h>
+#include <sensors/ImuCalibStatus.h>
 #include <std_msgs/Int16.h>
 
 // IMU Includes
@@ -56,11 +56,11 @@ std_msgs::Int16 lwheel_msg;
 ros::Publisher rwheel_pub("enc/wheel_right_ticks", &rwheel_msg);
 ros::Publisher lwheel_pub("enc/wheel_left_ticks", &lwheel_msg);
 // IMU
-encoders::ImuArray imu_data;
+sensors::ImuArray imu_data;
 ros::Publisher imu_pub("imu/data_array", &imu_data);
-encoders::ImuMag imu_mag;
+sensors::ImuMag imu_mag;
 ros::Publisher mag_pub("imu/mag_array", &imu_mag);
-encoders::ImuCalibStatus imu_calib_status;
+sensors::ImuCalibStatus imu_calib_status;
 ros::Publisher imu_status_pub("imu/status", &imu_calib_status);
 
 // IMU Objects

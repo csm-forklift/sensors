@@ -1,6 +1,6 @@
 #include <ros.h>
-#include <encoders/ImuCalibration.h>
-#include <encoders/ImuCalibStatus.h>
+#include <sensors/ImuCalibration.h>
+#include <sensors/ImuCalibStatus.h>
 
 #include <Wire.h>
 #include <Adafruit_Sensor.h>
@@ -49,9 +49,9 @@ Adafruit_BNO055 bno = Adafruit_BNO055(55);
 
 // ROS Objects
 ros::NodeHandle nh;
-encoders::ImuCalibration imu_calib;
+sensors::ImuCalibration imu_calib;
 ros::Publisher imu_calib_pub("imu/calibration", &imu_calib);
-encoders::ImuCalibStatus imu_cal_status;
+sensors::ImuCalibStatus imu_cal_status;
 ros::Publisher imu_cal_status_pub("imu/status", &imu_cal_status);
 
 /**************************************************************************/
