@@ -1,150 +1,239 @@
 #!/usr/bin/env python
 
-''' This node receives data published from an Arduino as arrays and then
-converts the data into ROS IMU messages and republishes. This node also handles
-checking the calibration status of the IMU and stores those parameters in a yaml
-file if the status is all 3's (meaning, fully calibrated).'''
+''' Node for converting the IMU (Adafruit BNO055) messages read by imu_read into 
+    standard ROS messages. The Arduino does not have enough memory to use the 
+    standard ROS messages, so the values are sent over as arrays. This node 
+    exists as a separate program to allow the IMU data to be read by the Arduino 
+    and then converted into the correct format. There is a version of that same 
+    code on the Raspberry Pi which will still work with this node. This way we 
+    can seemlessly switch between using the Pi or the Arduino if need be.'''
 
+# IMPORTANT!
+# The calibration bytes need to be placed in this order:
+# accel_offset_x
+# accel_offset_y
+# accel_offset_z
+# mag_offset_x
+# mag_offset_y
+# mag_offset_z
+# gyro_offset_x
+# gyro_offset_y
+# gyro_offset_z
+# accel_radius
+# mag_radius
+
+import sys
+import struct
+import time # for sleep, time
+import numpy as np
+from array import array
+import RPi.GPIO as gpio
 import rospy
-import rospkg
-from sensor_msgs.msg import Imu
-from sensors.msg import ImuArray
-from sensors.msg import ImuMag
-from sensors.msg import ImuCalibration
-from sensors.msg import ImuCalibStatus
-from geometry_msgs.msg import Vector3Stamped
-from tf.broadcaster import TransformBroadcaster
-from tf.listener import TransformListener
-from tf.transformations import euler_from_quaternion
-from time import time, localtime
+from sensors.msg import ImuArray, ImuMag, ImuCalibStatus, ImuCalibration
+from Adafruit_BNO055 import BNO055
 
-class ImuRead():
+class Calibration():
+    def __init__(self, ax=0.0, ay=0.0, az=0.0, ar=0.0, gx=0.0, gy=0.0, \
+                 gz=0.0, mx=0.0, my=0.0, mz=0.0, mr=0.0):
+        self.accel_offset_x = ax
+        self.accel_offset_y = ay
+        self.accel_offset_z = az
+        self.accel_radius = ar
+        self.gyro_offset_x = gx
+        self.gyro_offset_y = gy
+        self.gyro_offset_z = gz
+        self.mag_offset_x = mx
+        self.mag_offset_y = my
+        self.mag_offset_z = mz
+        self.mag_radius = mr
+
+class Quat():
+    def __init__(self, qx=0.0, qy=0.0, qz=0.0, qw=0.0):
+        self.qx = qx
+        self.qy = qy
+        self.qz = qz
+        self.qw = qw
+        
+class Vec():
+    def __init__(self, x=0.0, y=0.0, z=0.0):
+        self.x = x
+        self.y = y
+        self.z = z
+
+def bytes_from_calibration(calibration):
+        '''This function converts the calibration parameters into a list of 
+        bytes as required by Adafruits set_calibration() method.'''
+        calibration_list = [calibration.accel_offset_x, \
+                            calibration.accel_offset_y, \
+                            calibration.accel_offset_z, \
+                            calibration.mag_offset_x, \
+                            calibration.mag_offset_y, \
+                            calibration.mag_offset_z, \
+                            calibration.gyro_offset_x, \
+                            calibration.gyro_offset_y, \
+                            calibration.gyro_offset_z, \
+                            calibration.accel_radius, \
+                            calibration.mag_radius]
+        # Convert integers into a list of 22 bytes (11 int16 values in Hex form)
+        int16_list = [struct.pack('h', x) for x in calibration_list]
+        # combine into one string to easily divide into bytes in the next line
+        bytes_joined = "".join(int16_list)
+        byte_list = list(bytes_joined)
+        # Convert hex character code bytes into values
+        cal_bytes = [ord(x) for x in byte_list]
+        return cal_bytes
+
+def calibration_from_bytes(cal_bytes):
+        '''This function converts a list of int16 bytes back into a list of 
+        integer values'''
+        # Convert numbers into unsigned byte Hex representation
+        byte_list = [struct.pack('B', x) for x in cal_bytes]
+        # Join into a single string for easily unpacking in the next line
+        bytes_joined = "".join(byte_list)
+        # Convert Hex string of 22 bytes into 11 integers
+        calibration_list = struct.unpack('hhhhhhhhhhh', bytes_joined)
+        calibration = Calibration()
+        calibration.accel_offset_x = calibration_list[0]
+        calibration.accel_offset_y = calibration_list[1]
+        calibration.accel_offset_z = calibration_list[2]
+        calibration.mag_offset_x = calibration_list[3]
+        calibration.mag_offset_y = calibration_list[4]
+        calibration.mag_offset_z = calibration_list[5]
+        calibration.gyro_offset_x = calibration_list[6]
+        calibration.gyro_offset_y = calibration_list[7]
+        calibration.gyro_offset_z = calibration_list[8]
+        calibration.accel_radius = calibration_list[9]
+        calibration.mag_radius = calibration_list[10]
+        return calibration
+
+class ImuTest():
     def __init__(self):
-        rospy.init_node("imu_read");
+        #===== Setup ROS node, publishers, and messages =====#
+        rospy.init_node("imu_test_pi")
+        self.imu_data = ImuArray()
+        self.imu_pub = rospy.Publisher("/imu/data_array", ImuArray, queue_size=1)
+        self.imu_mag = ImuMag()
+        self.mag_pub = rospy.Publisher("/imu/mag_array", ImuMag, queue_size=1)
+        self.imu_status = ImuCalibStatus()
+        self.status_pub = rospy.Publisher("/imu/status", ImuCalibStatus, queue_size=1)
+        self.imu_calib = ImuCalibration()
+        self.calib_pub = rospy.Publisher("/imu/calibration", ImuCalibration, queue_size=1)
+        self.rate = 30 # publish at 30 Hz
+        self.save_time = time.time()
 
-        # Subscribers and frames for Arduino data
-        rospy.Subscriber("imu/data_array", ImuArray, self.imu_array_callback, queue_size = 1)
-        rospy.Subscriber("imu/mag_array", ImuMag, self.imu_mag_callback, queue_size = 1)
-        rospy.Subscriber("imu/calibration", ImuCalibration, self.imu_calib_callback, queue_size = 1)
-        self.odom_frame_id = "odom"
-        self.base_frame_id = "base_link"
-        self.imu_frame_id = "imu_link"
+        #===== Set GPIO =====#
+        gpio.setmode(gpio.BOARD)
+        # reseting the board causes problems, so don't
+        
+        #======================================================================#
+        # IMU Initialization
+        #======================================================================#
+        #===== Set calibration defaults
+        self.calibration = Calibration()
 
-        # Messages and publishers for conversion
-        self.imu_msg = Imu()
-        self.imu_base_link_msg = Imu()
-        self.imu_msg.header.frame_id = self.imu_frame_id
-        self.imu_base_link_msg.header.frame_id = self.base_frame_id
-        self.imu_pub = rospy.Publisher("imu/data", Imu, queue_size = 10)
-        self.imu_rpy_msg = Vector3Stamped()
-        self.imu_rpy_pub = rospy.Publisher("imu/rpy", Vector3Stamped, queue_size = 10)
-        self.imu_mag_msg = Vector3Stamped()
-        self.imu_mag_pub = rospy.Publisher("imu/mag", Vector3Stamped, queue_size = 10)
-        # Add transform to visualize orientation
-        #self.odom_broadcaster = TransformBroadcaster()
-        # Listener for base_link to imu_link transform to convert imu message into base_link frame
+        #===== Read in configuration parameters
+        calibration_param_names = ["accel_offset_x", "accel_offset_y", "accel_offset_z", "accel_radius", \
+            "gyro_offset_x", "gyro_offset_y", "gyro_offset_z", \
+            "mag_offset_x", "mag_offset_y", "mag_offset_z", "mag_radius"]
+        for param in calibration_param_names:
+            if rospy.has_param("imu/calibration/" + param):
+                exec "self.calibration." + param + " = rospy.get_param('imu/calibration/" + param + "')"
+            else:
+                print "No '" + param + "' found, using {0}".format(eval("self.calibration." + param))
+                
+        #===== Begin BNO055
+        self.serial_port = "/dev/serial0"
+        self.bno = BNO055.BNO055(serial_port=self.serial_port)
 
-        # Parameters for checking and storing calibration data
-        self.last_save_time = time()
-        self.calibration = ImuCalibration()
-        # Obtain the filepath for the IMU package (currently in 'sensors')
-        rospack = rospkg.RosPack()
-        self.package_path = rospack.get_path('sensors')
-        self.imu_calib_filename = rospy.get_param("/imu/calib_filename", self.package_path + "/config/imu_calibration.yaml")
+        # Initial mode should be OPERATION_MODE_M4G so magnetometer can align 
+        # without calibration, then after loading calibration change mode to
+        # OPERATION_MODE_NDOF
+        if not self.bno.begin(BNO055.OPERATION_MODE_M4G):
+            raise RuntimeError("Failed to initialize BNO055. Check sensor connection.")
+        
+        #===== Upload calibration parameters
+        # Convert calibration to bytes
+        initial_cal = bytes_from_calibration(self.calibration)
+        
+        # Upload to IMU
+        self.bno.set_calibration(initial_cal)
+        
+        # Change mode to OPERATION_MODE_NDOF so sensor data is fused to give
+        # absolute orientation
+        self.bno.set_mode(BNO055.OPERATION_MODE_NDOF)
+        
+        rospy.loginfo("IMU initialization successful.")
+        #======================================================================#
+        # IMU Initialization
+        #======================================================================#
 
-        # Procedure
-        # -save initial time of startup for when the calibration parameters were set
-        # -save calibration status and values when messages are received
-        # -during update function, check whether the calibration status is all 3's
-        # -if the status is all 3's then get the time since that last saved file
-        # -if time since last save has been one minute or more, save the new
-        #   parameters in a yaml file and update the last save time
+        def loop(self):
+        #===== Read IMU data
+        quat = Quat()
+        ang = Vec()
+        lin = Vec()
+        mag = Vec()
+        quat.qx, quat.qy, quat.qz, quat.qw = self.bno.read_quaternion()
+        ang.x, ang.y, ang.z = self.bno.read_gyroscope()
+        lin.x, lin.y, lin.z = self.bno.read_accelerometer()
+        mag.x, mag.y, mag.z = self.bno.read_magnetometer()
+        
+        #===== Convert to ROS message
+        # IMU data
+        self.imu_data.data[0] = quat.qw
+        self.imu_data.data[1] = quat.qx
+        self.imu_data.data[2] = quat.qy
+        self.imu_data.data[3] = quat.qz
+        self.imu_data.data[4] = ang.x
+        self.imu_data.data[5] = ang.y
+        self.imu_data.data[6] = ang.z
+        self.imu_data.data[7] = lin.x
+        self.imu_data.data[8] = lin.y
+        self.imu_data.data[9] = lin.z
+        # Magnetometer data
+        self.imu_mag.data[0] = mag.x
+        self.imu_mag.data[1] = mag.y
+        self.imu_mag.data[2] = mag.z
+        # Calibration Status
+        self.imu_status.system, self.imu_status.gyro, self.imu_status.accel, self.imu_status.mag = self.bno.get_calibration_status()
+        # Calibration parameters
+        # (if system status is 3 and last save time is >60sec)
+        if ((self.imu_status == 3) and (time.time() - self.save_time) > 60.0):
+            self.calibration = bytes_from_calibration(self.bno.get_calibration())
+            
+            self.imu_calib.data[0] = self.calibration.accel_offset_x
+            self.imu_calib.data[1] = self.calibration.accel_offset_y
+            self.imu_calib.data[2] = self.calibration.accel_offset_z
+            self.imu_calib.data[3] = self.calibration.accel_radius
+            self.imu_calib.data[4] = self.calibration.gyro_offset_x
+            self.imu_calib.data[5] = self.calibration.gyro_offset_y
+            self.imu_calib.data[6] = self.calibration.gyro_offset_z
+            self.imu_calib.data[7] = self.calibration.mag_offset_x
+            self.imu_calib.data[8] = self.calibration.mag_offset_y
+            self.imu_calib.data[9] = self.calibration.mag_offset_z
+            self.imu_calib.data[10] = self.calibration.mag_radius
+            
+            self.save_time = time.time()
+            self.calib_pub.publish(self.imu_calib)
 
-        # Loop rate for repeated code
-        self.rate = rospy.Rate(30)
+        #===== Publish
+        self.imu_pub.publish(self.imu_data)
+        self.mag_pub.publish(self.imu_mag)
+        self.status_pub.publish(self.imu_status)
 
     def spin(self):
+        r = rospy.Rate(self.rate)
         while not rospy.is_shutdown():
-            self.update()
-            self.rate.sleep()
+            self.loop()
+            r.sleep()
 
-    def update(self):
-        pass
-
-    def imu_array_callback(self, msg):
-        # Message is simply an array with 10 elements
-        # 0-3 = quaternion w,x,y,z
-        # 4-6 = angular velocity x,y,z
-        # 7-9 = linear acceleration x,y,z
-        self.imu_msg.header.stamp = rospy.Time.now()
-        self.imu_msg.orientation.w = msg.data[0]
-        self.imu_msg.orientation.x = msg.data[1]
-        self.imu_msg.orientation.y = msg.data[2]
-        self.imu_msg.orientation.z = msg.data[3]
-        self.imu_msg.angular_velocity.x = msg.data[4]
-        self.imu_msg.angular_velocity.y = msg.data[5]
-        self.imu_msg.angular_velocity.z = msg.data[6]
-        self.imu_msg.linear_acceleration.x = msg.data[7]
-        self.imu_msg.linear_acceleration.y = msg.data[8]
-        self.imu_msg.linear_acceleration.z = msg.data[9]
-
-        self.imu_pub.publish(self.imu_msg)
-
-        # Convert quaternion to RPY angles for /imu/rpy topic
-        self.imu_rpy_msg.header = self.imu_msg.header
-        (r, p, y) = euler_from_quaternion([self.imu_msg.orientation.x, self.imu_msg.orientation.y, self.imu_msg.orientation.z, self.imu_msg.orientation.w])
-        self.imu_rpy_msg.vector.x = r
-        self.imu_rpy_msg.vector.y = p
-        self.imu_rpy_msg.vector.z = y
-
-        self.imu_rpy_pub.publish(self.imu_rpy_msg)
-
-        # self.odom_broadcaster.sendTransform(
-        #     (0, 0, 0),
-        #     (self.imu_msg.orientation.x, self.imu_msg.orientation.y, self.imu_msg.orientation.z, self.imu_msg.orientation.w),
-        #     rospy.Time.now(),
-        #     self.base_frame_id,
-        #     self.odom_frame_id
-        # )
-
-    def imu_mag_callback(self, msg):
-        # Convert array to Vector3Stamped message
-        self.imu_mag_msg.header = self.imu_msg.header
-        self.imu_mag_msg.header.stamp = rospy.Time.now()
-        self.imu_mag_msg.vector.x = msg.data[0]
-        self.imu_mag_msg.vector.y = msg.data[1]
-        self.imu_mag_msg.vector.z = msg.data[2]
-
-        self.imu_mag_pub.publish(self.imu_mag_msg)
-
-    def imu_calib_callback(self, msg):
-        self.calibration = msg
-        # Get current time
-        self.last_save_time = time()
-        time_struct = localtime(self.last_save_time)
-        # Write configuration parameters to yaml file
-        with open(self.imu_calib_filename, "w") as file:
-            file.write("# Calibration file generated at %s:%s:%s on %s-%s-%s\n" % (time_struct.tm_hour, time_struct.tm_min, time_struct.tm_sec, time_struct.tm_year, time_struct.tm_mon, time_struct.tm_mday))
-            file.write("# These values are loaded with the startup launch file and uploaded to the IMU from the microcontroller.\n")
-            file.write("accel_offset_x: %d\n" % (self.calibration.data[0]))
-            file.write("accel_offset_y: %d\n" % (self.calibration.data[1]))
-            file.write("accel_offset_z: %d\n" % (self.calibration.data[2]))
-            file.write("accel_radius: %d\n" % (self.calibration.data[3]))
-            file.write("gyro_offset_x: %d\n" % (self.calibration.data[4]))
-            file.write("gyro_offset_y: %d\n" % (self.calibration.data[5]))
-            file.write("gyro_offset_z: %d\n" % (self.calibration.data[6]))
-            file.write("mag_offset_x: %d\n" % (self.calibration.data[7]))
-            file.write("mag_offset_y: %d\n" % (self.calibration.data[8]))
-            file.write("mag_offset_z: %d\n" % (self.calibration.data[9]))
-            file.write("mag_radius: %d\n" % (self.calibration.data[10]))
-            file.close();
-
-        rospy.loginfo("New IMU configuration parameters written to file: %s" % (self.imu_calib_filename))
 
 
 if __name__ == "__main__":
     try:
-        imu_read = ImuRead()
-        imu_read.spin()
+        imu = ImuTest()
+        imu.spin()
     except rospy.ROSInterruptException:
         pass
+    finally:
+        gpio.cleanup()
