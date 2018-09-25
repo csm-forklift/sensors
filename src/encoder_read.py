@@ -1,4 +1,6 @@
-''' This is the node for reading the encoder raw values and publishing them.'''
+''' This is the node for reading the encoder raw values and publishing them. 
+The tick values from this node are read by encoder_odom and converted into 
+odometry messages.'''
 
 import time
 import RPi.GPIO as GPIO

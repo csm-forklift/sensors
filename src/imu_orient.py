@@ -18,7 +18,7 @@ from tf.listener import TransformListener
 from tf.transformations import euler_from_quaternion
 from time import time, localtime
 
-class ImuRead():
+class ImuOrient():
     def __init__(self):
         rospy.init_node("imu_orient");
 
@@ -144,7 +144,7 @@ class ImuRead():
 
 if __name__ == "__main__":
     try:
-        imu_read = ImuRead()
+        imu_read = ImuOrient()
         imu_read.spin()
     except rospy.ROSInterruptException:
         pass

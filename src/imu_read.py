@@ -106,7 +106,7 @@ def calibration_from_bytes(cal_bytes):
         calibration.mag_radius = calibration_list[10]
         return calibration
 
-class ImuTest():
+class ImuRead():
     def __init__(self):
         #===== Setup ROS node, publishers, and messages =====#
         rospy.init_node("imu_test_pi")
@@ -231,7 +231,7 @@ class ImuTest():
 
 if __name__ == "__main__":
     try:
-        imu = ImuTest()
+        imu = ImuRead()
         imu.spin()
     except rospy.ROSInterruptException:
         pass
