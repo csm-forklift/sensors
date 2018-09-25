@@ -161,13 +161,7 @@ class ImuTest():
         # IMU Initialization
         #======================================================================#
 
-    def spin(self):
-        r = rospy.Rate(self.rate)
-        while not rospy.is_shutdown():
-            self.loop()
-            r.sleep()
-
-    def loop(self):
+        def loop(self):
         #===== Read IMU data
         quat = Quat()
         ang = Vec()
@@ -220,6 +214,14 @@ class ImuTest():
         self.imu_pub.publish(self.imu_data)
         self.mag_pub.publish(self.imu_mag)
         self.status_pub.publish(self.imu_status)
+
+    def spin(self):
+        r = rospy.Rate(self.rate)
+        while not rospy.is_shutdown():
+            self.loop()
+            r.sleep()
+
+
 
 if __name__ == "__main__":
     try:
