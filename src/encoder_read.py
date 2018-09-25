@@ -2,7 +2,7 @@
 
 import time
 import RPi.GPIO as GPIO
-
+import rospy
 
 def setup():
     global ir1_pin
@@ -250,7 +250,11 @@ ir3_pin = 33
 ir4_pin = 35
 switch_pin = 37
 
+
+
 def main():
+    rospy.init_node("encoder_read")
+    
     print "Beginning setup function"
     setup()
     try:
