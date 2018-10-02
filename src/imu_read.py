@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
-''' Node for converting the IMU (Adafruit BNO055) messages read by imu_read into 
-    standard ROS messages. The Arduino does not have enough memory to use the 
-    standard ROS messages, so the values are sent over as arrays. This node 
-    exists as a separate program to allow the IMU data to be read by the Arduino 
-    and then converted into the correct format. There is a version of that same 
-    code on the Raspberry Pi which will still work with this node. This way we 
+''' Node for converting the IMU (Adafruit BNO055) messages read by imu_read into
+    standard ROS messages. The Arduino does not have enough memory to use the
+    standard ROS messages, so the values are sent over as arrays. This node
+    exists as a separate program to allow the IMU data to be read by the Arduino
+    and then converted into the correct format. There is a version of that same
+    code on the Raspberry Pi which will still work with this node. This way we
     can seemlessly switch between using the Pi or the Arduino if need be.'''
 
 # IMPORTANT!
@@ -53,7 +53,7 @@ class Quat():
         self.qy = qy
         self.qz = qz
         self.qw = qw
-        
+
 class Vec():
     def __init__(self, x=0.0, y=0.0, z=0.0):
         self.x = x
@@ -61,7 +61,7 @@ class Vec():
         self.z = z
 
 def bytes_from_calibration(calibration):
-        '''This function converts the calibration parameters into a list of 
+        '''This function converts the calibration parameters into a list of
         bytes as required by Adafruits set_calibration() method.'''
         calibration_list = [calibration.accel_offset_x, \
                             calibration.accel_offset_y, \
@@ -84,7 +84,7 @@ def bytes_from_calibration(calibration):
         return cal_bytes
 
 def calibration_from_bytes(cal_bytes):
-        '''This function converts a list of int16 bytes back into a list of 
+        '''This function converts a list of int16 bytes back into a list of
         integer values'''
         # Convert numbers into unsigned byte Hex representation
         byte_list = [struct.pack('B', x) for x in cal_bytes]
@@ -106,6 +106,9 @@ def calibration_from_bytes(cal_bytes):
         calibration.mag_radius = calibration_list[10]
         return calibration
 
+#======================================================================#
+# Main Class
+#======================================================================#
 class ImuRead():
     def __init__(self):
         #===== Setup ROS node, publishers, and messages =====#
@@ -124,7 +127,7 @@ class ImuRead():
         #===== Set GPIO =====#
         gpio.setmode(gpio.BOARD)
         # reseting the board causes problems, so don't
-        
+
         #======================================================================#
         # IMU Initialization
         #======================================================================#
@@ -140,28 +143,28 @@ class ImuRead():
                 exec "self.calibration." + param + " = rospy.get_param('imu/calibration/" + param + "')"
             else:
                 print "No '" + param + "' found, using {0}".format(eval("self.calibration." + param))
-                
+
         #===== Begin BNO055
         self.serial_port = "/dev/serial0"
         self.bno = BNO055.BNO055(serial_port=self.serial_port)
 
-        # Initial mode should be OPERATION_MODE_M4G so magnetometer can align 
+        # Initial mode should be OPERATION_MODE_M4G so magnetometer can align
         # without calibration, then after loading calibration change mode to
         # OPERATION_MODE_NDOF
         if not self.bno.begin(BNO055.OPERATION_MODE_M4G):
             raise RuntimeError("Failed to initialize BNO055. Check sensor connection.")
-        
+
         #===== Upload calibration parameters
         # Convert calibration to bytes
         initial_cal = bytes_from_calibration(self.calibration)
-        
+
         # Upload to IMU
         self.bno.set_calibration(initial_cal)
-        
+
         # Change mode to OPERATION_MODE_NDOF so sensor data is fused to give
         # absolute orientation
         self.bno.set_mode(BNO055.OPERATION_MODE_NDOF)
-        
+
         rospy.loginfo("IMU initialization successful.")
         #======================================================================#
         # IMU Initialization
@@ -177,7 +180,7 @@ class ImuRead():
         ang.x, ang.y, ang.z = self.bno.read_gyroscope()
         lin.x, lin.y, lin.z = self.bno.read_accelerometer()
         mag.x, mag.y, mag.z = self.bno.read_magnetometer()
-        
+
         #===== Convert to ROS message
         # IMU data
         self.imu_data.data[0] = quat.qw
@@ -200,7 +203,7 @@ class ImuRead():
         # (if system status is 3 and last save time is >60sec)
         if ((self.imu_status == 3) and (time.time() - self.save_time) > 60.0):
             self.calibration = bytes_from_calibration(self.bno.get_calibration())
-            
+
             self.imu_calib.data[0] = self.calibration.accel_offset_x
             self.imu_calib.data[1] = self.calibration.accel_offset_y
             self.imu_calib.data[2] = self.calibration.accel_offset_z
@@ -212,7 +215,7 @@ class ImuRead():
             self.imu_calib.data[8] = self.calibration.mag_offset_y
             self.imu_calib.data[9] = self.calibration.mag_offset_z
             self.imu_calib.data[10] = self.calibration.mag_radius
-            
+
             self.save_time = time.time()
             self.calib_pub.publish(self.imu_calib)
 

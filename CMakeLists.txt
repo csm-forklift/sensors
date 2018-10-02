@@ -57,6 +57,7 @@ add_message_files(
   ImuMag.msg
   ImuCalibration.msg
   ImuCalibStatus.msg
+  ProximitySensorArray.msg
 )
 
 ## Generate services in the 'srv' folder
