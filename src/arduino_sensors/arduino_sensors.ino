@@ -82,9 +82,9 @@ int section_size = (signal_max - signal_min) / num_sections; // to the nearest m
 int desired_position = 0; // desired actuator position
 int current_position = signal_min; // current position of the actuator as read from the US sensor (mm)
 int noise_threshold = 20; // (mm) the threshold value that the error (+ or -) must be greater than to force the actuator to move without being explicitly commanded by the brake_fraction
-float fraction_section_size = 1.0/num_sections; // used to determine the section the brake fraction should fall into
 float brake_fraction = 0; // percentage of stroke length to move to, this value is converted into the desired section
                          // this value is read in by a ROS subscriber
+float position_fraction = 0; // this is the current position converted back into a fraction to publish back out for feedback
 boolean update_position = false; // turns true when the current error goes outside the noise range or a new command has been sent.
 boolean direction = 0; // 1 = move outward, 0 = move inward
 
@@ -99,7 +99,9 @@ ros::Publisher proximity_pub("proximity_sensors", &distances);
 // Callback function which updates the global variable 'desired_position
 // brake_fraction is converted into a desired position which is referenced in the loop() function
 void updateDesiredPosition(const std_msgs::Float32& msg);
-ros::Subscriber<std_msgs::Float32> brake_fraction_sub("controls/brake_fraction", &updateDesiredPosition);
+ros::Subscriber<std_msgs::Float32> brake_fraction_sub("controls/brake/desired", &updateDesiredPosition);
+std_msgs::Float32 position_msg;
+ros::Publisher brake_position_pub("controls/brake/position", &position_msg);
 // TO-DO: Add subscribers for the data you need to send out control signals to the forklift
 
 void setup()
@@ -107,6 +109,7 @@ void setup()
   // Setup ROS
   nh.initNode();
   nh.advertise(proximity_pub);
+  nh.advertise(brake_position_pub);
   
   // Setup Pins
   // Proximity IR
@@ -143,10 +146,11 @@ void loop()
     distances.ir_data[i] = getIRDistance(IR_SENSORS[i]);
   }
   
-  // Ultrasonic Distance
-  for (int i = 0; i < NUM_US_SENSORS; ++i) {
-    distances.us_data[i] = getUSDistance(US_SENSORS[i][0], US_SENSORS[i][1]);
-  }
+//  // Ultrasonic Distance (comment this out if you do not use US sensors for proximity)
+//  for (int i = 0; i < NUM_US_SENSORS; ++i) {
+//    distances.us_data[i] = getUSDistance(US_SENSORS[i][0], US_SENSORS[i][1]);
+//  
+//  }
   
   // Publish values
   distances.seq++;
@@ -158,8 +162,10 @@ void loop()
   // Read position
   current_position = getUSDistance(TRIG_PIN_LA, ECHO_PIN_LA);
   
-  // Update desired section based on brake fraction [0 -> 1]
-  
+  // Convert current position into a fraction [0 -> 1] for publishing
+  position_fraction = (float)(current_position - signal_min) / (float)(signal_max - signal_min);
+  position_msg.data = position_fraction;
+  brake_position_pub.publish(&position_msg);
   
   // Check if the position error is beyond the noise threshold, if so move the actuator
   // The direction you are traveling will determine the stopping criteria
@@ -205,6 +211,8 @@ void loop()
   
   //===== Axle Sensor =====//
   //===== Axle Sensor =====//
+  
+  nh.spinOnce();
 }
 
 // Returns the distance given from the IR sensor
@@ -238,21 +246,46 @@ int getUSDistance(int trig_pin, int echo_pin)
   
   // Read the echo_pin, which turns HIGH for the length of time the sound 
   // wave traveled (in microseconds)
-  long duration = pulseIn(echo_pin, HIGH); // microseconds
+  long duration = pulseIn(echo_pin, HIGH); // microseconds, has timeout of 6000 microseconds (time to travel 2m)
   
   // Calculate the distance traveled ***(mm)***
   // Here we use milimeters to be at an appropriate integer resolution
   // for the actuator regions
   float speed_of_sound = 0.343; // (mm/microsecond)
   int distance = (duration / 2.0)*speed_of_sound; // divide duration by 2 since the sound wave goes out then back, so it travels twice the distance we are looking for
+  
+  return distance;
 }
 
 void updateDesiredPosition(const std_msgs::Float32& msg)
 {
   // Read in new brake command
+  // Bound value between 0 and 1
   brake_fraction = msg.data;
+  if (brake_fraction > 1.0) {
+    brake_fraction = 1.0;
+  }
+  else if (brake_fraction < 0.0) {
+    brake_fraction = 0.0;
+  }
   
   // Convert into a position along the stroke length (based on number of targets)
+  // (find nearest target number, then use target number to get position)
+  // Targets are labelled like so:
+  //       0     1     2     3          num_sections
+  //       |-----|-----|-----|----- ... -----|
+  //fully-retracted                    fully-extended
+  float brake_conversion = brake_fraction*num_sections;
+  float upper_error = abs(((int) brake_conversion + 1) - brake_conversion);
+  float lower_error = abs(brake_conversion - ((int) brake_conversion));
+  int target;
+  if (upper_error > lower_error) { // round upward
+    target = ((int) brake_conversion + 1);
+  }
+  else { // round down
+    target = ((int) brake_conversion);
+  }
+  desired_position = target*section_size + signal_min;
   
   // Find error and determine direction
   current_position = getUSDistance(TRIG_PIN_LA, ECHO_PIN_LA);
