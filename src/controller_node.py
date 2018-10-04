@@ -7,7 +7,7 @@ steering.'''
 
 import rospy
 from std_msgs.msg import Float32, Float64
-import RPI.GPIO as gpio
+import RPi.GPIO as gpio
 import time
 
 
