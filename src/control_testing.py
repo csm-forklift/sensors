@@ -24,7 +24,10 @@ class ControlTesting():
         self.brake_sub = rospy.Subscriber("controls/brake/position", Float32, self.brake_callback)
 
     def update(self):
-        pass
+        fraction = raw_input("Enter brake percent: ")
+        fraction_msg = Float32()
+        fraction_msg.data = float(fraction)
+        self.brake_pub.publish(fraction_msg)
 
     def spin(self):
         r = rospy.Rate(30)
@@ -33,10 +36,12 @@ class ControlTesting():
             r.sleep()
 
     def proximity_callback(self, msg):
-        print msg
+        pass
+        #print msg
 
     def brake_callback(self, msg):
-        print msg
+        pass
+        #print msg
 
 
 
