@@ -83,8 +83,8 @@ int signal_min = 50; // distance at min stroke length (mm)
 int section_size = (signal_max - signal_min) / num_sections; // to the nearest mm
 int desired_position = 0; // desired actuator position
 int current_position = signal_min; // current position of the actuator as read from the US sensor (mm)
-int noise_threshold = 20; // (mm) the threshold value that the error (+ or -) must be greater than to force the actuator to move without being explicitly commanded by the brake_fraction
-float brake_fraction = 0; // percentage of stroke length to move to, this value is converted into the desired section
+int noise_threshold = 20; // (mm) the threshold value that the error (+ or -) must be greater than to force the actuator to move without being explicitly commanded by the brake_input
+float brake_input = 0; // percentage of stroke length to move to, this value is converted into the desired section
                          // this value is read in by a ROS subscriber
 float position_fraction = 0; // this is the current position converted back into a fraction to publish back out for feedback
 int current_target = 0; // used to determine whether we need to move or not
@@ -105,9 +105,9 @@ sensors::ProximitySensorArray distances;
 ros::Publisher proximity_pub("proximity_sensors", &distances);
 
 // Callback function which updates the global variable 'desired_position
-// brake_fraction is converted into a desired position which is referenced in the loop() function
+// brake_input is converted into a desired position which is referenced in the loop() function
 void updateDesiredPosition(const std_msgs::Float32& msg);
-ros::Subscriber<std_msgs::Float32> brake_fraction_sub("controls/brake/desired", &updateDesiredPosition);
+ros::Subscriber<std_msgs::Float32> brake_input_sub("controls/brake/input", &updateDesiredPosition);
 std_msgs::Float32 position_msg;
 ros::Publisher brake_position_pub("controls/brake/position", &position_msg);
 std_msgs::Int32 signal_msg;
@@ -125,7 +125,7 @@ void setup()
   nh.advertise(brake_position_pub);
   nh.advertise(brake_signal_pub);
   nh.advertise(output_message_pub);
-  nh.subscribe(brake_fraction_sub);
+  nh.subscribe(brake_input_sub);
   
   // Setup Pins
   // Proximity IR
@@ -290,12 +290,12 @@ void updateDesiredPosition(const std_msgs::Float32& msg)
 {
   // Read in new brake command
   // Bound value between 0 and 1
-  brake_fraction = msg.data;
-  if (brake_fraction > 1.0) {
-    brake_fraction = 1.0;
+  brake_input = msg.data;
+  if (brake_input > 1.0) {
+    brake_input = 1.0;
   }
-  else if (brake_fraction < 0.0) {
-    brake_fraction = 0.0;
+  else if (brake_input < 0.0) {
+    brake_input = 0.0;
   }
   
   // Convert into a position along the stroke length (based on number of targets)
@@ -304,7 +304,7 @@ void updateDesiredPosition(const std_msgs::Float32& msg)
   //       0     1     2     3          num_sections
   //       |-----|-----|-----|----- ... -----|
   //fully-retracted                    fully-extended
-  float brake_conversion = brake_fraction*num_sections;
+  float brake_conversion = brake_input*num_sections;
   float upper_error = abs(((int) brake_conversion + 1) - brake_conversion);
   float lower_error = abs(brake_conversion - ((int) brake_conversion));
 
@@ -319,6 +319,7 @@ void updateDesiredPosition(const std_msgs::Float32& msg)
   
   // Find error and determine direction
   current_position = getUSDistance(TRIG_PIN_LA, ECHO_PIN_LA);
+  current_position = expWeightedAverage(current_position);
   int position_error = current_position - desired_position;
   
   if (position_error > 0) {

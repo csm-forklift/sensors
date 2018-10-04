@@ -25,6 +25,8 @@
 #include <ros.h>
 #include <ros/time.h>
 #include <std_msgs/Float32.h>
+#include <std_msgs/Int32.h>
+#include <std_msgs/String.h>
 #include <sensors/ProximitySensorArray.h>
 
 // Proximity IR Sensors
@@ -68,25 +70,31 @@ const int US_SENSORS[NUM_US_SENSORS][2] = {{TRIG_PIN1, ECHO_PIN1}, {TRIG_PIN2, E
 const int TRIG_PIN_LA = 28;
 const int ECHO_PIN_LA = 29;
 // Motor Driver Pins
-const int LPWM = 10; // H-bridge leg 1, this should pull the actuator in
-const int L_EN = 8; // H-bridge enable pin 1
-const int RPWM = 11; // H-bridge leg 2, this should push the actuator out
-const int R_EN = 7; // H-bridge enable pin 2
+const int LPWM = 30; // H-bridge leg 1, this should pull the actuator in
+const int L_EN = 32; // H-bridge enable pin 1
+const int RPWM = 31; // H-bridge leg 2, this should push the actuator out
+const int R_EN = 33; // H-bridge enable pin 2
 // Controller Parameters
 int num_targets = 5; // number of target values the actuator can move to, this discretizes the positioning
                      // needs to be at least 2, 1 for each endpoint
 int num_sections = num_targets - 1; // number of divisions, based on target points
-int signal_max = 135; // distance at max stroke length (mm)
-int signal_min = 30; // distance at min stroke length (mm)
+int signal_max = 170; // distance at max stroke length (mm)
+int signal_min = 50; // distance at min stroke length (mm)
 int section_size = (signal_max - signal_min) / num_sections; // to the nearest mm
 int desired_position = 0; // desired actuator position
 int current_position = signal_min; // current position of the actuator as read from the US sensor (mm)
-int noise_threshold = 20; // (mm) the threshold value that the error (+ or -) must be greater than to force the actuator to move without being explicitly commanded by the brake_fraction
-float brake_fraction = 0; // percentage of stroke length to move to, this value is converted into the desired section
+int noise_threshold = 20; // (mm) the threshold value that the error (+ or -) must be greater than to force the actuator to move without being explicitly commanded by the brake_input
+float brake_input = 0; // percentage of stroke length to move to, this value is converted into the desired section
                          // this value is read in by a ROS subscriber
 float position_fraction = 0; // this is the current position converted back into a fraction to publish back out for feedback
+int current_target = 0; // used to determine whether we need to move or not
+int previous_target = 0;
 boolean update_position = false; // turns true when the current error goes outside the noise range or a new command has been sent.
 boolean direction = 0; // 1 = move outward, 0 = move inward
+// Values for storing a window of data and performing an average to smooth out the noise
+const int WINDOW_SIZE = 10;
+const float ALPHA = 0.5; // learning weight for exponentially weighted average
+int position_window[WINDOW_SIZE] = {0};
 
 // Axle Sensor
 // *currently unknown*
@@ -97,11 +105,24 @@ sensors::ProximitySensorArray distances;
 ros::Publisher proximity_pub("proximity_sensors", &distances);
 
 // Callback function which updates the global variable 'desired_position
-// brake_fraction is converted into a desired position which is referenced in the loop() function
+// brake_input is converted into a desired position which is referenced in the loop() function
 void updateDesiredPosition(const std_msgs::Float32& msg);
-ros::Subscriber<std_msgs::Float32> brake_fraction_sub("controls/brake/desired", &updateDesiredPosition);
+
+// Subscribe to brake input
+ros::Subscriber<std_msgs::Float32> brake_input_sub("controls/brake/input", &updateDesiredPosition);
+
+// Publish the current brake position for debugging
 std_msgs::Float32 position_msg;
 ros::Publisher brake_position_pub("controls/brake/position", &position_msg);
+
+// Publish the current signal reading for debugging
+std_msgs::Int32 signal_msg;
+ros::Publisher brake_signal_pub("controls/brake/signal", &signal_msg);
+
+// DEBUG: debugging output message
+std_msgs::String output_msg;
+ros::Publisher output_message_pub("controls/debug/output", &output_msg);
+
 // TO-DO: Add subscribers for the data you need to send out control signals to the forklift
 
 void setup()
@@ -110,6 +131,10 @@ void setup()
   nh.initNode();
   nh.advertise(proximity_pub);
   nh.advertise(brake_position_pub);
+  nh.advertise(brake_signal_pub);
+  nh.advertise(output_message_pub);
+  nh.subscribe(brake_input_sub);
+  
   
   // Setup Pins
   // Proximity IR
@@ -161,6 +186,10 @@ void loop()
   //===== Linear Actuator Control =====//
   // Read position
   current_position = getUSDistance(TRIG_PIN_LA, ECHO_PIN_LA);
+  // Get exponentially weighted average to smooth out data
+  current_position = expWeightedAverage(current_position);
+  signal_msg.data = current_position;
+  brake_signal_pub.publish(&signal_msg);
   
   // Convert current position into a fraction [0 -> 1] for publishing
   position_fraction = (float)(current_position - signal_min) / (float)(signal_max - signal_min);
@@ -261,12 +290,12 @@ void updateDesiredPosition(const std_msgs::Float32& msg)
 {
   // Read in new brake command
   // Bound value between 0 and 1
-  brake_fraction = msg.data;
-  if (brake_fraction > 1.0) {
-    brake_fraction = 1.0;
+  brake_input = msg.data;
+  if (brake_input > 1.0) {
+    brake_input = 1.0;
   }
-  else if (brake_fraction < 0.0) {
-    brake_fraction = 0.0;
+  else if (brake_input < 0.0) {
+    brake_input = 0.0;
   }
   
   // Convert into a position along the stroke length (based on number of targets)
@@ -275,20 +304,22 @@ void updateDesiredPosition(const std_msgs::Float32& msg)
   //       0     1     2     3          num_sections
   //       |-----|-----|-----|----- ... -----|
   //fully-retracted                    fully-extended
-  float brake_conversion = brake_fraction*num_sections;
+  float brake_conversion = brake_input*num_sections;
   float upper_error = abs(((int) brake_conversion + 1) - brake_conversion);
   float lower_error = abs(brake_conversion - ((int) brake_conversion));
-  int target;
-  if (upper_error > lower_error) { // round upward
-    target = ((int) brake_conversion + 1);
+
+  // Update target and check if we need to move
+  if (upper_error < lower_error) { // round upward
+    current_target = ((int) brake_conversion + 1);
   }
   else { // round down
-    target = ((int) brake_conversion);
+    current_target = ((int) brake_conversion);
   }
-  desired_position = target*section_size + signal_min;
+  desired_position = current_target*section_size + signal_min;
   
   // Find error and determine direction
   current_position = getUSDistance(TRIG_PIN_LA, ECHO_PIN_LA);
+  current_position = expWeightedAverage(current_position);
   int position_error = current_position - desired_position;
   
   if (position_error > 0) {
@@ -299,5 +330,60 @@ void updateDesiredPosition(const std_msgs::Float32& msg)
   }
   
   // Tell actuator it needs to update its position
-  update_position = true;
+  if (current_target != previous_target) {
+    update_position = true;
+    previous_target = current_target;
+  }
+}
+
+int expWeightedAverage(int value)
+{
+  float average = 0;
+  // Update window array and compute average
+  for (int i = 0; i < (WINDOW_SIZE - 1); ++i) {
+    position_window[i] = position_window[i+1];
+    if (i == 0) {
+      average = position_window[i];
+    }
+    else {
+      average = ALPHA*position_window[i] + (1 - ALPHA)*average;
+    }
+  }
+  position_window[WINDOW_SIZE - 1] = value;
+  average = ALPHA*value + (1 - ALPHA)*average;
+
+  return average;
+}
+
+void setActuatorLimist(int lpwm, int rpwm)
+{
+  // Push actuator out (give it 5 seconds) and then store the max signal read over a period of 3 seconds
+  digitalWrite(lpwm, LOW);
+  analogWrite(rpwm, 255);
+  delay(5000);
+
+  int tic = millis();
+  int toc = millis();
+  while ((toc - tic) < 5000) {
+    int signal_read = getUSDistance(TRIG_PIN_LA, ECHO_PIN_LA);
+    if (signal_read > signal_max) {
+      signal_max = signal_read;
+    }
+    toc = millis();
+  }
+
+  // Pull the actuator in (give it 5 seconds) and then store the min signal read over a period of 3 seconds
+  digitalWrite(rpwm, LOW);
+  analogWrite(lpwm, 255);
+  delay(5000);
+
+  tic = millis();
+  toc = millis();
+  while ((toc - tic) < 5000) {
+    int signal_read = getUSDistance(TRIG_PIN_LA, ECHO_PIN_LA);
+    if (signal_read < signal_min) {
+      signal_min = signal_read;
+    }
+    toc = millis();
+  }
 }

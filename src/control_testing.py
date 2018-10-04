@@ -20,7 +20,7 @@ class ControlTesting():
         self.proximity_sub = rospy.Subscriber("proximity_sensors", ProximitySensorArray, self.proximity_callback)
 
         # Brake Actuator
-        self.brake_pub = rospy.Publisher("controls/brake/desired", Float32, queue_size=10)
+        self.brake_pub = rospy.Publisher("controls/brake/input", Float32, queue_size=10)
         self.brake_sub = rospy.Subscriber("controls/brake/position", Float32, self.brake_callback)
 
     def update(self):

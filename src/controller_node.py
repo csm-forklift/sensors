@@ -17,7 +17,7 @@ class ControllerNode():
         self.rate = 60
 
         # Commands
-        self.brake_pub = rospy.Publisher("controls/brake/desired", Float32, queue_size=10)
+        self.brake_pub = rospy.Publisher("controls/brake/input", Float32, queue_size=10)
         self.steering_sub = rospy.Subscriber("controls/steering/input", Float64, self.steering_callback)
         self.accelerator_sub = rospy.Subscriber("controls/accelerator/input", Float64, self.accelerator_callback)
 
@@ -33,10 +33,12 @@ class ControllerNode():
             r.sleep()
 
     def update(self):
+        #
         for i in range(0,101):
             self.accelerator_pwm.start(i)
             time.sleep(0.05)
 
+        time.sleep(1)
         self.accelerator_pwm.stop()
         time.sleep(1)
 
@@ -48,7 +50,16 @@ class ControllerNode():
         pass
 
     def accelerator_callback(self, msg):
-        pass
+        # Convert fraction into PWM duty cycle (0 -> 100%)
+        fraction = 0
+        if (msg.data < 0.):
+            fraction = 0.
+        if (msg.data > 1.):
+            fraction = 1.
+
+        duty_cycle = fraction*100
+        self.accelerator_pwm.start(duty_cycle)
+
 
 if __name__ == '__main__':
     try:
