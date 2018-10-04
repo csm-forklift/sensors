@@ -4,7 +4,7 @@
 debugging purposes.'''
 
 import rospy
-from std_msgs.msg import Float32
+from std_msgs.msg import Float32, Float64
 from sensors.msg import ProximitySensorArray
 
 
@@ -29,10 +29,13 @@ class ControlTesting():
     def update(self):
         fraction = raw_input("Enter drive ([-1, 1] -1 = full brake, 1 = full throttle): ")
 
+        fraction = float(fraction)
+
         # Check if the value is for braking or throttle
-        if (fraction < 0): # Brake
+        if (fraction < 0.): # Brake
+            print "Braking..."
             fraction_msg = Float32()
-            fraction = fabs(fraction)
+            fraction = abs(fraction)
             if (fraction > 1.):
                 fraction = 1.
             if (fraction < 0.):
@@ -40,6 +43,11 @@ class ControlTesting():
             fraction_msg.data = float(fraction)
             self.brake_pub.publish(fraction_msg)
         else: # Accelerate
+            print "Accelerating..."
+            # Make sure brake is off before Accelerating
+            brake_msg = Float32()
+            brake_msg.data = 0
+            self.brake_pub.publish(brake_msg)
             fraction_msg = Float64()
             if (fraction > 1.):
                 fraction = 1.
