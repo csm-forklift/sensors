@@ -59,13 +59,14 @@ class ControllerNode():
 
     def accelerator_callback(self, msg):
         # Convert fraction into PWM duty cycle (0 -> 100%)
-        fraction = 0
-        if (msg.data < 0.):
+        fraction = msg.data
+        if (fraction < 0.):
             fraction = 0.
-        if (msg.data > 1.):
+        if (fraction > 1.):
             fraction = 1.
 
-        duty_cycle = fraction*100
+        duty_cycle = fraction*100.
+        print "Running with duty cycle: %f" % duty_cycle
         self.accelerator_pwm.ChangeDutyCycle(duty_cycle)
 
 
