@@ -24,7 +24,9 @@ class ControllerNode():
         # GPIO Pin Setup
         self.ACCELERATOR_PIN = 37
         gpio.setmode(gpio.BOARD)
+        gpio.setup(self.ACCELERATOR_PIN, gpio.OUT)
         self.accelerator_pwm = gpio.PWM(self.ACCELERATOR_PIN, 1000)
+        self.accelerator_pwm.start(0)
 
     def spin(self):
         r = rospy.Rate(self.rate)
@@ -35,16 +37,21 @@ class ControllerNode():
     def update(self):
         #
         for i in range(0,101):
-            self.accelerator_pwm.start(i)
+            self.accelerator_pwm.ChangeDutyCycle(i)
+            print i
             time.sleep(0.05)
 
         time.sleep(1)
         self.accelerator_pwm.stop()
         time.sleep(1)
 
-        for i in range(100, 0, -1):
-            self.accelerator_pwm.start(i)
+        self.accelerator_pwm.start(100)
+        for i in range(100, -1, -1):
+            self.accelerator_pwm.ChangeDutyCycle(i)
+            print i
             time.sleep(0.05)
+            
+        time.sleep(1)
 
     def steering_callback(self, msg):
         pass
