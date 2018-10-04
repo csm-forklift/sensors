@@ -35,23 +35,24 @@ class ControllerNode():
             r.sleep()
 
     def update(self):
+        # # Testing Accelerator PWM
+        # for i in range(0,101):
+        #     self.accelerator_pwm.ChangeDutyCycle(i)
+        #     print i
+        #     time.sleep(0.05)
         #
-        for i in range(0,101):
-            self.accelerator_pwm.ChangeDutyCycle(i)
-            print i
-            time.sleep(0.05)
-
-        time.sleep(1)
-        self.accelerator_pwm.stop()
-        time.sleep(1)
-
-        self.accelerator_pwm.start(100)
-        for i in range(100, -1, -1):
-            self.accelerator_pwm.ChangeDutyCycle(i)
-            print i
-            time.sleep(0.05)
-            
-        time.sleep(1)
+        # time.sleep(1)
+        # self.accelerator_pwm.stop()
+        # time.sleep(1)
+        #
+        # self.accelerator_pwm.start(100)
+        # for i in range(100, -1, -1):
+        #     self.accelerator_pwm.ChangeDutyCycle(i)
+        #     print i
+        #     time.sleep(0.05)
+        #
+        # time.sleep(1)
+        pass
 
     def steering_callback(self, msg):
         pass
@@ -65,7 +66,7 @@ class ControllerNode():
             fraction = 1.
 
         duty_cycle = fraction*100
-        self.accelerator_pwm.start(duty_cycle)
+        self.accelerator_pwm.ChangeDutyCycle(duty_cycle)
 
 
 if __name__ == '__main__':

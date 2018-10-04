@@ -23,11 +23,31 @@ class ControlTesting():
         self.brake_pub = rospy.Publisher("controls/brake/input", Float32, queue_size=10)
         self.brake_sub = rospy.Subscriber("controls/brake/position", Float32, self.brake_callback)
 
+        # Accelerator signal
+        self.accelerator_pub = rospy.Publisher("controls/accelerator/input", Float64, queue_size=10)
+
     def update(self):
-        fraction = raw_input("Enter brake percent: ")
-        fraction_msg = Float32()
-        fraction_msg.data = float(fraction)
-        self.brake_pub.publish(fraction_msg)
+        fraction = raw_input("Enter drive ([-1, 1] -1 = full brake, 1 = full throttle): ")
+
+        # Check if the value is for braking or throttle
+        if (fraction < 0): # Brake
+            fraction_msg = Float32()
+            fraction = fabs(fraction)
+            if (fraction > 1.):
+                fraction = 1.
+            if (fraction < 0.):
+                fraction = 0.
+            fraction_msg.data = float(fraction)
+            self.brake_pub.publish(fraction_msg)
+        else: # Accelerate
+            fraction_msg = Float64()
+            if (fraction > 1.):
+                fraction = 1.
+            if (fraction < 0.):
+                fraction = 0.
+            fraction_msg.data = float(fraction)
+            self.accelerator_pub.publish(fraction_msg)
+
 
     def spin(self):
         r = rospy.Rate(30)
