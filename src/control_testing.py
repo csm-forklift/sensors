@@ -12,6 +12,7 @@ class ControlTesting():
     def __init__(self):
         # Begin node
         rospy.init_node("control_testing")
+        rospy.on_shutdown(self.shutdown_procedure)
 
         # Set publishers and subscribers, try to group by control system so that
         # way you can comment them out in blocks
@@ -34,6 +35,10 @@ class ControlTesting():
         # Check if the value is for braking or throttle
         if (fraction < 0.): # Brake
             print "Braking..."
+            # Make sure accelerator is off before Braking
+            accelerator_msg = Float64()
+            accelerator_msg.data = 0
+            self.accelerator_pub.publish(accelerator_msg)
             fraction_msg = Float32()
             fraction = abs(fraction)
             if (fraction > 1.):
@@ -70,6 +75,12 @@ class ControlTesting():
     def brake_callback(self, msg):
         pass
         #print msg
+        
+    def shutdown_procedure(self):
+        print "Closing accelerator"
+        accelerator_msg = Float64()
+        accelerator_msg.data = 0.
+        control_test.accelerator_pub.publish(accelerator_msg)
 
 
 
@@ -77,5 +88,7 @@ if __name__ == "__main__":
     try:
         control_test = ControlTesting()
         control_test.spin()
+    except ValueError:
+        print "Improper value received to accelerator input"
     except rospy.ROSInterruptException:
         pass
