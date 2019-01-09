@@ -78,8 +78,11 @@ const int R_EN = 33; // H-bridge enable pin 2
 int num_targets = 5; // number of target values the actuator can move to, this discretizes the positioning
                      // needs to be at least 2, 1 for each endpoint
 int num_sections = num_targets - 1; // number of divisions, based on target points
-int signal_max = 170; // distance at max stroke length (mm)
-int signal_min = 50; // distance at min stroke length (mm)
+// To check the min and max signal values, set the min to 0 and the max to 1024
+// then run the code and publish 0 and 1.0 to /controls/brake/input then echo 
+// /controls/brake/signal to see what the limits actually are
+int signal_max = 190; // distance at max stroke length (mm)
+int signal_min = 90; // distance at min stroke length (mm)
 int section_size = (signal_max - signal_min) / num_sections; // to the nearest mm
 int desired_position = 0; // desired actuator position
 int current_position = signal_min; // current position of the actuator as read from the US sensor (mm)
@@ -127,6 +130,9 @@ ros::Publisher output_message_pub("controls/debug/output", &output_msg);
 
 void setup()
 {
+  // Start serial connection
+  Serial.begin(57600);
+  
   // Setup ROS
   nh.initNode();
   nh.advertise(proximity_pub);
@@ -134,7 +140,6 @@ void setup()
   nh.advertise(brake_signal_pub);
   nh.advertise(output_message_pub);
   nh.subscribe(brake_input_sub);
-  
   
   // Setup Pins
   // Proximity IR
@@ -355,7 +360,7 @@ int expWeightedAverage(int value)
   return average;
 }
 
-void setActuatorLimist(int lpwm, int rpwm)
+void setActuatorLimits(int lpwm, int rpwm)
 {
   // Push actuator out (give it 5 seconds) and then store the max signal read over a period of 3 seconds
   digitalWrite(lpwm, LOW);
