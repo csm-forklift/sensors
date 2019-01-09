@@ -170,7 +170,7 @@ class ImuRead():
         # IMU Initialization
         #======================================================================#
 
-        def loop(self):
+    def loop(self):
         #===== Read IMU data
         quat = Quat()
         ang = Vec()

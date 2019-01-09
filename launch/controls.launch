@@ -21,12 +21,12 @@
         <group unless="$(arg debug)">
             <rosparam file="$(find sensors)/config/imu_calibration.yaml" command="load" ns="imu/calibration" />
             <node pkg="sensors" name="imu_orient" type="imu_orient.py" />
-            <node pkg="sensors" name="imu_read" type="imu_read.py" />
+            <node pkg="sensors" name="imu_read" type="imu_read.py" respawn ="true" />
         </group>
         <group if="$(arg debug)">
             <rosparam file="$(find sensors)/config/imu_calibration.yaml" command="load" ns="imu/calibration" />
             <node pkg="sensors" name="imu_orient" type="imu_orient.py" output="screen" />
-            <node pkg="sensors" name="imu_read" type="imu_read.py" output="screen" />
+            <node pkg="sensors" name="imu_read" type="imu_read.py" output="screen" respawn="true" />
         </group>
     </group>
 
@@ -46,19 +46,19 @@
     
     <!-- Begin Throttle Controller Node -->
     <group if="$(arg debug)">
-        <node pkg="sensors" name="throttle_control" type="throttle_control.py" output="screen" />
+        <node pkg="sensors" name="throttle_controller" type="throttle_control.py" output="screen" />
     </group>
     <group unless="$(arg debug)">
-        <node pkg="sensors" name="throttle_control" type="throttle_control.py" />
+        <node pkg="sensors" name="throttle_controller" type="throttle_control.py" />
     </group>
     
     
     <!-- Begin Steering Controller Node -->
     <group if="$(arg debug)">
-        <node pkg="sensors" name="steering_control" type="steering_control.py" output="screen" />
+        <node pkg="sensors" name="steering_controller" type="steering_control.py" output="screen" />
     </group>
     <group unless="$(arg debug)">
-        <node pkg="sensors" name="steering_control" type="steering_control.py" />
+        <node pkg="sensors" name="steering_controller" type="steering_control.py" />
     </group>
 
 </launch>

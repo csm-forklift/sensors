@@ -67,8 +67,8 @@ class ThrottleController():
 
 if __name__ == '__main__':
     try:
-        controller_node = ControllerNode()
-        controller_node.spin()
+        throttle_controller = ThrottleController()
+        throttle_controller.spin()
     except rospy.ROSInterruptException:
         pass
     finally:
