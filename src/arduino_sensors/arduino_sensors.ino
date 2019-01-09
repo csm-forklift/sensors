@@ -112,19 +112,19 @@ ros::Publisher proximity_pub("proximity_sensors", &distances);
 void updateDesiredPosition(const std_msgs::Float32& msg);
 
 // Subscribe to brake input
-ros::Subscriber<std_msgs::Float32> brake_input_sub("controls/brake/input", &updateDesiredPosition);
+ros::Subscriber<std_msgs::Float32> brake_input_sub("throttle_controller/brake/input", &updateDesiredPosition);
 
 // Publish the current brake position for debugging
 std_msgs::Float32 position_msg;
-ros::Publisher brake_position_pub("controls/brake/position", &position_msg);
+ros::Publisher brake_position_pub("throttle_controller/brake/position", &position_msg);
 
 // Publish the current signal reading for debugging
 std_msgs::Int32 signal_msg;
-ros::Publisher brake_signal_pub("controls/brake/signal", &signal_msg);
+ros::Publisher brake_signal_pub("throttle_controller/brake/signal", &signal_msg);
 
 // DEBUG: debugging output message
 std_msgs::String output_msg;
-ros::Publisher output_message_pub("controls/debug/output", &output_msg);
+ros::Publisher output_message_pub("throttle_controller/debug/output", &output_msg);
 
 // TO-DO: Add subscribers for the data you need to send out control signals to the forklift
 

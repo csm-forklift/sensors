@@ -8,11 +8,13 @@
     <arg name="port" default="/dev/ttyACM0" />
     <arg name="debug" default="false" />
 
+
     <!-- Set up connection with Arduino -->
     <!-- The Arduino should be running the code: arduino_sensors.ino -->
     <node pkg="rosserial_python" name="serial_node" type="serial_node.py" respawn="true">
         <param name="port" value="$(arg port)" />
     </node>
+
 
     <!-- Begin IMU Nodes -->
     <group if="$(arg use_imu)">
@@ -28,6 +30,7 @@
         </group>
     </group>
 
+
     <!-- Begin Encoder Nodes -->
     <group if="$(arg use_encoders)">
         <group unless="$(arg debug)">
@@ -38,6 +41,24 @@
             <node pkg="sensors" name="encoder_odom" type="encoder_odom.py" output="screen" />
             <node pkg="sensors" name="encoder_read" type="encoder_read.py" output="screen" />
         </group>
+    </group>
+    
+    
+    <!-- Begin Throttle Controller Node -->
+    <group if="$(arg debug)">
+        <node pkg="sensors" name="throttle_control" type="throttle_control.py" output="screen" />
+    </group>
+    <group unless="$(arg debug)">
+        <node pkg="sensors" name="throttle_control" type="throttle_control.py" />
+    </group>
+    
+    
+    <!-- Begin Steering Controller Node -->
+    <group if="$(arg debug)">
+        <node pkg="sensors" name="steering_control" type="steering_control.py" output="screen" />
+    </group>
+    <group unless="$(arg debug)">
+        <node pkg="sensors" name="steering_control" type="steering_control.py" />
     </group>
 
 </launch>
