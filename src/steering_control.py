@@ -5,7 +5,7 @@ import traceback
 import time
 import math
 import rospy
-from std_msgs.msg import Float32
+from std_msgs.msg import Float64
 from Phidget22.Devices.Stepper import *
 from Phidget22.PhidgetException import *
 from Phidget22.Phidget import *
@@ -62,14 +62,14 @@ class SteeringController():
         rospy.init_node("steering_controller")
         rospy.on_shutdown(self.close) # shuts down the Phidget properly
         if (self.control_mode == 0):
-            rospy.Subscriber("~target_position", Float32, self.target_position_callback, queue_size = 1)
+            rospy.Subscriber("~target_position", Float64, self.target_position_callback, queue_size = 1)
         elif (self.control_mode == 1):
-            rospy.Subscriber("~target_velocity", Float32, self.target_velocity_callback, queue_size = 1)
+            rospy.Subscriber("~target_velocity", Float64, self.target_velocity_callback, queue_size = 1)
         else:
             print("Invalid control mode specified. Please set 'control_mode' to be 0 or 1")
             sys.exit(1)
-        self.position_pub = rospy.Publisher("~current_position", Float32, queue_size = 10)
-        self.velocity_pub = rospy.Publisher("~current_velocity", Float32, queue_size = 10)
+        self.position_pub = rospy.Publisher("~current_position", Float64, queue_size = 10)
+        self.velocity_pub = rospy.Publisher("~current_velocity", Float64, queue_size = 10)
 
         #================================#
         # Create phidget stepper channel
@@ -189,10 +189,10 @@ class SteeringController():
         sys.stderr.write("[Phidget Error Event] -> " + errorString + " (" + str(errorCode) + ")\n")
 
     def onPositionChangeHandler(self, channel, position):
-        self.position_pub.publish(Float32(position))
+        self.position_pub.publish(Float64(position))
 
     def onVelocityChangeHandler(self, channel, velocity):
-        self.velocity_pub.publish(Float32(velocity))
+        self.velocity_pub.publish(Float64(velocity))
 
     def close(self):
         print("\n" + 30*"-")

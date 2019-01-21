@@ -60,5 +60,8 @@
     <group unless="$(arg debug)">
         <node pkg="sensors" name="steering_controller" type="steering_control.py" />
     </group>
+    
+    <!-- Start Controller GUI -->
+    <node pkg="sensors" name="control_gui" type="control_gui.py" />
 
 </launch>
