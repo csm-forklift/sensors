@@ -1,0 +1,22 @@
+Here are the final regression parameters using the average parameters
+obtained from analyzing 3 datasets:
+1) steering_data-2019-04-01_093900-30hz-left.csv
+2) steering_data-2019-04-01_094415-30hz-right.csv
+3) steering_data-2019-04-01_094924-30hz-left.csv
+
+The best fit is a linear first-order polynomial
+y = m*x + b
+
+For how these answers were obtained see the file "steering_analysis.py".
+
+Averaged Results (to be used in code)
+Positive region: m = 2.91186044, b = -1535.39415892
+Negative region: m = 3.88249541, b = -2047.64178971
+
+Individual results were:
+1) Positive region: m = 2.90879013, b = -1533.92000844
+   Negative region: m = 3.88419658, b = -2048.8394073
+2) Positive region: m = 2.9116872, b = -1535.13806697
+   Negative region: m = 3.88219793, b = -2047.25249553
+3) Positive region: m = 2.915104, b = -1537.12440135
+   Negative region: m = 3.88109171, b = -2046.83346632
