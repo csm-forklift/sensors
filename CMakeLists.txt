@@ -15,6 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   message_generation
+  tf
 )
 
 ## System dependencies are found with CMake's conventions
@@ -146,6 +147,7 @@ include_directories(
 add_executable(data_processing src/data_processing.cpp)
 add_executable(steering_node src/steering_node.cpp)
 add_executable(velocity_conversion src/velocity_conversion.cpp)
+add_executable(imu_viewer src/imu_viewer.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -161,15 +163,10 @@ add_executable(velocity_conversion src/velocity_conversion.cpp)
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
-target_link_libraries(data_processing
-    ${catkin_LIBRARIES}
-)
-target_link_libraries(steering_node
-    ${catkin_LIBRARIES}
-)
-target_link_libraries(velocity_conversion
-    ${catkin_LIBRARIES}
-)
+target_link_libraries(data_processing ${catkin_LIBRARIES})
+target_link_libraries(steering_node ${catkin_LIBRARIES})
+target_link_libraries(velocity_conversion ${catkin_LIBRARIES})
+target_link_libraries(imu_viewer ${catkin_LIBRARIES})
 
 #############
 ## Install ##

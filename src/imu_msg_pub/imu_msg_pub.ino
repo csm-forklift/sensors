@@ -34,7 +34,7 @@ ros::NodeHandle nh;
 sensor_msgs::Imu imu_data;
 ros::Publisher imu_pub("arduino/imu", &imu_data);
 sensors::ImuCalibStatus imu_calib_status;
-ros::Publisher imu_status_pub("arduino/status", &imu_calib_status);
+ros::Publisher imu_status_pub("arduino/imu_status", &imu_calib_status);
 
 // IMU Objects
 Adafruit_BNO055 bno = Adafruit_BNO055(55);
@@ -97,10 +97,10 @@ void setup() {
   // Needs a delay before attempting to load parameters
   delay(1000);
   
-  if (!nh.getParam("imu/calibration/accel_offset_x", &accel_offset_x, .1)) {
+  if (!nh.getParam("imu/calibration/accel_offset_x", &accel_offset_x)) {
     accel_offset_x = calibration_data.accel_offset_x;
   }
-  if (!nh.getParam("imu/calibration/accel_offset_y", &accel_offset_y, .1)) {
+  if (!nh.getParam("imu/calibration/accel_offset_y", &accel_offset_y)) {
     accel_offset_y = calibration_data.accel_offset_y;
   }
   if (!nh.getParam("imu/calibration/accel_offset_z", &accel_offset_z)) {
@@ -155,7 +155,7 @@ void loop() {
 
   // Set header
   imu_data.header.stamp = nh.now();
-  imu_data.header.frame_id = "arduino_imu";
+  imu_data.header.frame_id = "imu_link";
 
   // Set orientation
   imu_data.orientation.x = quat.x();

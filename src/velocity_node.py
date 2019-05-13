@@ -28,7 +28,7 @@ class VelocityNode:
         self.traction_wheel_factor = 8520.
 
         # Set up canbus connection
-        self.bus_name = rospy.get_param("~/bus_name", "vcan0")
+        self.bus_name = rospy.get_param("~/bus_name", "slcan0")
         self.can_id = '0x388' # CAN ID for the message containing velocity data
         # the order to combine the raw data bytes in
         # e.g. [2,3] means get byte 2 as the MSB with byte 3 as the LSB and combine them
