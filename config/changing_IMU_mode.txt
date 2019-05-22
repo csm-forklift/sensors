@@ -1,0 +1,9 @@
+Here is how to change the IMU mode.
+
+Go to the Arduino "Libraries" folder (wherever that is on your computer, to find
+it check the Arduino's IDE under "File -> Preferences" and it should be under
+the "sketchbook location" folder) and open the file 
+"Adafruit_BNO055/Adafruit_BNO055.h". Near the bottom, find the function "begin" 
+and change the "mode" default value to the desired operating mode. Then you can 
+resend the code to the Arduino. To see the different kinds of operating modes, 
+consult the BNO055 data sheet page 20 for the operating mode descriptions.

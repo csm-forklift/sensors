@@ -6,7 +6,7 @@
 
 #include <ros/ros.h>
 #include <std_msgs/Float32.h>
-#include <geometry_msgs/TwistStamped.h>
+#include <geometry_msgs/TwistWithCovarianceStamped.h>
 #include <cmath>
 #include <string>
 
@@ -31,7 +31,7 @@ private:
     // Motion variables
     double velocity; // m/s
     double angle; // rad
-    geometry_msgs::TwistStamped twist;
+    geometry_msgs::TwistWithCovarianceStamped twist;
 
 public:
     VelocityConversion() : nh_("~"), rate(30)
@@ -39,14 +39,14 @@ public:
         // Set up ROS connections
         velocity_sub = nh_.subscribe("/velocity_node/velocity", 10, &VelocityConversion::velocityCallback, this);
         steering_angle_sub = nh_.subscribe("/steering_node/filtered_angle", 10, &VelocityConversion::angleCallback, this);
-        twist_pub = nh_.advertise<geometry_msgs::TwistStamped>("twist", 10);
+        twist_pub = nh_.advertise<geometry_msgs::TwistWithCovarianceStamped>("twist", 10);
         nh_.param<double>("publish_frequency", publish_frequency, 30);
         rate = ros::Rate(publish_frequency);
         nh_.param<std::string>("base_link_frame", twist_frame, "base_link");
 
         // Set parameters
-        nh_.param<double>("forklift_length", forklift_length, 1);
-        nh_.param<double>("length_to_base", length_to_base, 0);
+        nh_.param<double>("forklift_length", forklift_length, 2.5601);
+        nh_.param<double>("length_to_base", length_to_base, 0); // length from the middle of the front axle to the base_link origin
 
         // Set initial state
         velocity = 0;
@@ -64,7 +64,7 @@ public:
     {
         while (ros::ok()) {
             // Uupdate twist message and publish
-            twist = calculateTwist();
+            calculateTwist(twist);
             twist_pub.publish(twist);
             ros::spinOnce();
             rate.sleep();
@@ -81,19 +81,16 @@ public:
         angle = msg.data;
     }
 
-    geometry_msgs::TwistStamped calculateTwist()
+    void calculateTwist(geometry_msgs::TwistWithCovarianceStamped &forklift_twist)
     {
         // Calculate the linear velocity at the base_link
         double v_b = velocity*sqrt(1 + pow((length_to_base/forklift_length)*tan(angle), 2));
         double theta_dot = velocity*(tan(angle)/forklift_length);
 
-        geometry_msgs::TwistStamped forklift_twist;
         forklift_twist.header.stamp = ros::Time::now();
         forklift_twist.header.frame_id = twist_frame.c_str();
-        forklift_twist.twist.linear.x = v_b;
-        forklift_twist.twist.angular.z = theta_dot;
-
-        return forklift_twist;
+        forklift_twist.twist.twist.linear.x = v_b;
+        forklift_twist.twist.twist.angular.z = theta_dot;
     }
 };
 

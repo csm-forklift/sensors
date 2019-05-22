@@ -23,9 +23,9 @@ public:
     ImuViewer()
     {
         // Grab parameters
-        nh_.param<std::string>("imu_topic", imu_topic, "arduino/imu");
+        nh_.param<std::string>("imu_topic", imu_topic, "/arduino/imu");
         nh_.param<std::string>("origin_frame", origin_frame, "origin");
-        nh_.param<std::string>("imu_frame", imu_frame, "imu_link");
+        nh_.param<std::string>("imu_frame", imu_frame, "base_link");
 
         // Set up subcriber
         imu_sub = nh_.subscribe<sensor_msgs::Imu>(imu_topic.c_str(), 10, &ImuViewer::imuCallback, this);
