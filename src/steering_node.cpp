@@ -6,7 +6,7 @@
 
 
 #include <ros/ros.h>
-#include <std_msgs/Float32.h>
+#include <std_msgs/Float64.h>
 #include <std_msgs/Int16.h>
 #include <cmath>
 
@@ -34,8 +34,8 @@ public:
     {
         // Set up ROS connections
         raw_pot_sub = nh_.subscribe("/steering_node/potentiometer/raw_data", 10, &SteeringNode::rawPotCallback, this);
-        steering_angle_deg_pub = nh_.advertise<std_msgs::Float32>("filtered_angle_deg", 10);
-        steering_angle_pub = nh_.advertise<std_msgs::Float32>("filtered_angle", 10);
+        steering_angle_deg_pub = nh_.advertise<std_msgs::Float64>("filtered_angle_deg", 10);
+        steering_angle_pub = nh_.advertise<std_msgs::Float64>("filtered_angle", 10);
 
         // Set up data parameters
         nh_.param<double>("filter_gain", filter_gain, 0.5);
@@ -69,8 +69,8 @@ public:
         // one for negative angles)
         // See the file "sensors/config/steering_regression_parameters.txt" for
         // the regression values.
-        std_msgs::Float32 angle_deg;
-        std_msgs::Float32 angle;
+        std_msgs::Float64 angle_deg;
+        std_msgs::Float64 angle;
         if (value >= region_divide) {
             angle_deg.data = (m_pos*value + b_pos)/10.0;
         }
