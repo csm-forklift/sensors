@@ -45,7 +45,7 @@ public:
         nh_.param<std::string>("base_link_frame", twist_frame, "base_link");
 
         // Set parameters
-        nh_.param<double>("forklift_length", forklift_length, 2.5601);
+        nh_.param<double>("forklift/body/length", forklift_length, 2.5601);
         nh_.param<double>("length_to_base", length_to_base, 0); // length from the middle of the front axle to the base_link origin
 
         // Set initial state
