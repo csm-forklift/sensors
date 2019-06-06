@@ -14,6 +14,11 @@
  * D21       SCL
  * D22       SDA
  * 
+ * IMU 1
+ * ID on back: 4517
+ * 
+ * IMU 2
+ * ID on back: 0519
  */
 
 
@@ -166,7 +171,56 @@ void setup() {
   calibration_data.mag_offset_z = mag_offset_z;
   calibration_data.mag_radius = mag_radius;
   bno.setSensorOffsets(calibration_data);
-  // TODO: Need to add second set of calibration parameters for second IMU
+  
+  // Load Calibration Parameters for IMU 2
+  bno2.getSensorOffsets(calibration_data); // grab defaults first
+  
+  if (!nh.getParam("imu2/calibration/accel_offset_x", &accel_offset_x)) {
+    accel_offset_x = calibration_data.accel_offset_x;
+  }
+  if (!nh.getParam("imu2/calibration/accel_offset_y", &accel_offset_y)) {
+    accel_offset_y = calibration_data.accel_offset_y;
+  }
+  if (!nh.getParam("imu2/calibration/accel_offset_z", &accel_offset_z)) {
+    accel_offset_z = calibration_data.accel_offset_z;
+  }
+  if (!nh.getParam("imu2/calibration/accel_radius", &accel_radius)) {
+    accel_radius = calibration_data.accel_radius;
+  }
+  if (!nh.getParam("imu2/calibration/gyro_offset_x", &gyro_offset_x)) {
+    gyro_offset_x = calibration_data.gyro_offset_x;
+  }
+  if (!nh.getParam("imu2/calibration/gyro_offset_y", &gyro_offset_y)) {
+    gyro_offset_y = calibration_data.gyro_offset_y;
+  }
+  if (!nh.getParam("imu2/calibration/gyro_offset_z", &gyro_offset_z)) {
+    gyro_offset_z = calibration_data.gyro_offset_z;
+  }
+  if (!nh.getParam("imu2/calibration/mag_offset_x", &mag_offset_x)) {
+    mag_offset_x = calibration_data.mag_offset_x;
+  }
+  if (!nh.getParam("imu2/calibration/mag_offset_y", &mag_offset_y)) {
+    mag_offset_y = calibration_data.mag_offset_y;
+  }
+  if (!nh.getParam("imu2/calibration/mag_offset_z", &mag_offset_z)) {
+    mag_offset_z = calibration_data.mag_offset_z;
+  }
+  if (!nh.getParam("imu2/calibration/mag_radius", &mag_radius)) {
+    mag_radius = calibration_data.mag_radius;
+  }
+
+  // Upload parameters to IMU 2
+  calibration_data.accel_offset_x = accel_offset_x;
+  calibration_data.accel_offset_y = accel_offset_y;
+  calibration_data.accel_offset_z = accel_offset_z;
+  calibration_data.accel_radius = accel_radius;
+  calibration_data.gyro_offset_x = gyro_offset_x;
+  calibration_data.gyro_offset_y = gyro_offset_y;
+  calibration_data.gyro_offset_z = gyro_offset_z;
+  calibration_data.mag_offset_x = mag_offset_x;
+  calibration_data.mag_offset_y = mag_offset_y;
+  calibration_data.mag_offset_z = mag_offset_z;
+  calibration_data.mag_radius = mag_radius;
   bno2.setSensorOffsets(calibration_data);
 }
 

@@ -96,7 +96,8 @@ void setup() {
 
   // Needs a delay before attempting to load parameters
   delay(1000);
-  
+
+  // Load Calibration Parameters for IMU
   if (!nh.getParam("imu/calibration/accel_offset_x", &accel_offset_x)) {
     accel_offset_x = calibration_data.accel_offset_x;
   }
