@@ -37,7 +37,7 @@ sensors::ImuCalibStatus imu_calib_status;
 ros::Publisher imu_status_pub("arduino/imu_status", &imu_calib_status);
 
 // IMU Objects
-Adafruit_BNO055 bno = Adafruit_BNO055(55);
+Adafruit_BNO055 bno = Adafruit_BNO055(56, BNO055_ADDRESS_B);
 imu::Quaternion quat;
 imu::Vector<3> ang;
 imu::Vector<3> lin;
@@ -96,8 +96,7 @@ void setup() {
 
   // Needs a delay before attempting to load parameters
   delay(1000);
-
-  // Load Calibration Parameters for IMU
+  
   if (!nh.getParam("imu/calibration/accel_offset_x", &accel_offset_x)) {
     accel_offset_x = calibration_data.accel_offset_x;
   }

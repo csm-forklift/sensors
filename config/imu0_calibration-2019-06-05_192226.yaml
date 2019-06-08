@@ -1,0 +1,14 @@
+# Calibration file generated at 2019-06-05_192226
+# These values are loaded with the startup launch file and uploaded to the IMU
+# from the microcontroller.
+accel_offset_x: -6
+accel_offset_y: 8
+accel_offset_z: 19
+accel_radius: 1000
+gyro_offset_x: -2
+gyro_offset_y: -2
+gyro_offset_z: 0
+mag_offset_x: -25
+mag_offset_y: -81
+mag_offset_z: 148
+mag_radius: 563

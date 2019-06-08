@@ -117,7 +117,7 @@ void setup(void)
     delay(1000);
     
     /* Initialise the sensor */
-    if (!bno.begin())
+    if (!bno.begin(Adafruit_BNO055::OPERATION_MODE_NDOF))
     {
         /* There was a problem detecting the BNO055 ... check your connections */
         while (1) {
