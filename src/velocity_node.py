@@ -8,7 +8,7 @@ This data is then published on a ROS topic.
 '''
 
 import rospy
-from std_msgs.msg import Float32, Int16
+from std_msgs.msg import Float64, Int16
 import binascii # for 'hexlify'
 import can # requires Python3
 
@@ -17,11 +17,11 @@ class VelocityNode:
     def __init__(self):
         # Set up ROS Parameters and Objects
         rospy.init_node("velocity_node")
-        self.velocity_pub = rospy.Publisher("velocity_node/velocity", Float32, queue_size=10)
-        self.velocity_kmh_pub = rospy.Publisher("velocity_node/velocity_kmh", Float32, queue_size=10)
+        self.velocity_pub = rospy.Publisher("velocity_node/velocity", Float64, queue_size=10)
+        self.velocity_kmh_pub = rospy.Publisher("velocity_node/velocity_kmh", Float64, queue_size=10)
         self.canbus_pub = rospy.Publisher("velocity_node/canbus_velocity", Int16, queue_size=10)
-        self.velocity_msg = Float32()
-        self.velocity_kmh_msg = Float32()
+        self.velocity_msg = Float64()
+        self.velocity_kmh_msg = Float64()
         self.canbus_msg = Int16()
 
         # Velocity parameters

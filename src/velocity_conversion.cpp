@@ -5,7 +5,7 @@
 
 
 #include <ros/ros.h>
-#include <std_msgs/Float32.h>
+#include <std_msgs/Float64.h>
 #include <geometry_msgs/TwistWithCovarianceStamped.h>
 #include <cmath>
 #include <string>
@@ -53,10 +53,10 @@ public:
         angle = 0;
 
         // Wait to receive one of each message type before continuing
-        boost::shared_ptr<std_msgs::Float32 const> msg_ptr;
-        msg_ptr = ros::topic::waitForMessage<std_msgs::Float32>("/steering_node/filtered_angle");
+        boost::shared_ptr<std_msgs::Float64 const> msg_ptr;
+        msg_ptr = ros::topic::waitForMessage<std_msgs::Float64>("/steering_node/filtered_angle");
         angle = msg_ptr->data;
-        msg_ptr = ros::topic::waitForMessage<std_msgs::Float32>("/velocity_node/velocity");
+        msg_ptr = ros::topic::waitForMessage<std_msgs::Float64>("/velocity_node/velocity");
         velocity = msg_ptr->data;
     }
 
@@ -71,12 +71,12 @@ public:
         }
     }
 
-    void velocityCallback(const std_msgs::Float32 msg)
+    void velocityCallback(const std_msgs::Float64 msg)
     {
         velocity = msg.data;
     }
 
-    void angleCallback(const std_msgs::Float32 msg)
+    void angleCallback(const std_msgs::Float64 msg)
     {
         angle = msg.data;
     }
