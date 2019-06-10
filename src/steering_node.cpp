@@ -28,6 +28,7 @@ private:
     double m_neg; // slope for negative retion regression
     double b_neg; // y-intercept for negative region regression
     int region_divide; // x-value where the to regions cross
+    double angle_bias; // Zero-offset of the angle, used to tune regression of it does not quite match exactly enough, defaults to 0 {rad}
 
 public:
     SteeringNode() : nh_("~")
@@ -39,6 +40,7 @@ public:
 
         // Set up data parameters
         nh_.param<double>("filter_gain", filter_gain, 0.5);
+        nh_.param<double>("angle_bias", angle_bias, 0.0);
         prev_value = -1; // initially set to an invalid value to check if it has been defined before once data is received.
         m_pos = 2.91186044;
         b_pos = -1535.39415892;
@@ -80,6 +82,11 @@ public:
 
         // Convert to radians
         angle.data = angle_deg.data * (M_PI/180.0);
+
+        // Add bias to the angle (for tuning)
+        // (bias is in radians)
+        angle.data += angle_bias;
+        angle_deg.data += angle_bias*(180.0/M_PI);
 
         // Publish
         steering_angle_deg_pub.publish(angle_deg);
