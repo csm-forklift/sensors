@@ -20,7 +20,7 @@ private:
     std::string imu_frame;
 
 public:
-    ImuViewer()
+    ImuViewer() : nh_("imu_viewer")
     {
         // Grab parameters
         nh_.param<std::string>("imu_topic", imu_topic, "/arduino/imu");

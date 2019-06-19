@@ -5,7 +5,8 @@
 
 
 #include <ros/ros.h>
-#include <std_msgs/Float32.h>
+#include <std_msgs/Float64.h>
+#include <std_msgs/Int8.h>
 #include <geometry_msgs/TwistWithCovarianceStamped.h>
 #include <cmath>
 #include <string>
@@ -18,6 +19,7 @@ private:
     ros::NodeHandle nh_;
     ros::Subscriber velocity_sub; // grabs velocity in m/s
     ros::Subscriber steering_angle_sub; // grabs steering angle in rad
+    ros::Subscriber gear_sub; // gets driving direction
     ros::Publisher twist_pub; // publishes combined linear and angular velocities
     ros::Rate rate;
     double publish_frequency; // desired publishing rate
@@ -31,6 +33,7 @@ private:
     // Motion variables
     double velocity; // m/s
     double angle; // rad
+    int gear; // 1 = forward, 0 = neutral, -1 = reverse
     geometry_msgs::TwistWithCovarianceStamped twist;
 
 public:
@@ -39,6 +42,7 @@ public:
         // Set up ROS connections
         velocity_sub = nh_.subscribe("/velocity_node/velocity", 10, &VelocityConversion::velocityCallback, this);
         steering_angle_sub = nh_.subscribe("/steering_node/filtered_angle", 10, &VelocityConversion::angleCallback, this);
+        gear_sub = nh_.subscribe("/velocity_node/gear", 10, &VelocityConversion::gearCallback, this);
         twist_pub = nh_.advertise<geometry_msgs::TwistWithCovarianceStamped>("twist", 10);
         nh_.param<double>("publish_frequency", publish_frequency, 30);
         rate = ros::Rate(publish_frequency);
@@ -51,12 +55,14 @@ public:
         // Set initial state
         velocity = 0;
         angle = 0;
+        //FIXME: starts in forward position right now, will need to adjust once we have control over the gear switch.
+        gear = 1;
 
         // Wait to receive one of each message type before continuing
-        boost::shared_ptr<std_msgs::Float32 const> msg_ptr;
-        msg_ptr = ros::topic::waitForMessage<std_msgs::Float32>("/steering_node/filtered_angle");
+        boost::shared_ptr<std_msgs::Float64 const> msg_ptr;
+        msg_ptr = ros::topic::waitForMessage<std_msgs::Float64>("/steering_node/filtered_angle");
         angle = msg_ptr->data;
-        msg_ptr = ros::topic::waitForMessage<std_msgs::Float32>("/velocity_node/velocity");
+        msg_ptr = ros::topic::waitForMessage<std_msgs::Float64>("/velocity_node/velocity");
         velocity = msg_ptr->data;
     }
 
@@ -71,21 +77,29 @@ public:
         }
     }
 
-    void velocityCallback(const std_msgs::Float32 msg)
+    void velocityCallback(const std_msgs::Float64 msg)
     {
         velocity = msg.data;
     }
 
-    void angleCallback(const std_msgs::Float32 msg)
+    void angleCallback(const std_msgs::Float64 msg)
     {
         angle = msg.data;
     }
 
+    void gearCallback(const std_msgs::Int8 msg)
+    {
+        gear = msg.data;
+    }
+
     void calculateTwist(geometry_msgs::TwistWithCovarianceStamped &forklift_twist)
     {
+        // FIXME: try increasing the velocity value when turning
+        //velocity *= 1 + (angle/M_PI);
+
         // Calculate the linear velocity at the base_link
         double v_b = velocity*sqrt(1 + pow((length_to_base/forklift_length)*tan(angle), 2));
-        double theta_dot = velocity*(tan(angle)/forklift_length);
+        double theta_dot = -gear*(velocity*(tan(angle)/forklift_length));
 
         forklift_twist.header.stamp = ros::Time::now();
         forklift_twist.header.frame_id = twist_frame.c_str();
