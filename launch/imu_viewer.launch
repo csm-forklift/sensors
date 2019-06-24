@@ -1,0 +1,9 @@
+<launch>
+
+    <node pkg="sensors" name="imu_viewer" type="imu_viewer" >
+        <param name="imu_topic" value="/arduino/imu1" />
+        <param name="origin_frame" value="odom" />
+        <param name="imu_frame" value="imu_link" />
+    </node>
+
+</launch>
