@@ -6,10 +6,7 @@
 
 #include <ros/ros.h>
 #include <std_msgs/Float64.h>
-<<<<<<< HEAD
-=======
 #include <std_msgs/Int8.h>
->>>>>>> 81da8e17d57d18b6a216d27f7a687c2f44b6c5a8
 #include <geometry_msgs/TwistWithCovarianceStamped.h>
 #include <cmath>
 #include <string>
