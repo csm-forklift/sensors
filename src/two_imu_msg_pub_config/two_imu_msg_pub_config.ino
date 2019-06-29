@@ -34,6 +34,9 @@
 #include <Adafruit_BNO055.h>
 #include <utility/imumaths.h>
 
+// Constants
+#define M_PI 3.14159265358979323846  /* pi */
+
 // ROS Objects
 ros::NodeHandle nh;
 sensor_msgs::Imu imu0_data;
@@ -281,10 +284,11 @@ void loop() {
   imu0_data.orientation.z = quat0.z();
   imu0_data.orientation.w = quat0.w();
 
-  // Set angular velocity
-  imu0_data.angular_velocity.x = ang0.x();
-  imu0_data.angular_velocity.y = ang0.y();
-  imu0_data.angular_velocity.z = ang0.z();
+  // Set angular velocity (original data in Degrees Per Second, need to convert
+  // to Radians Per Second)
+  imu0_data.angular_velocity.x = ang0.x()*(M_PI/180.0);
+  imu0_data.angular_velocity.y = ang0.y()*(M_PI/180.0);
+  imu0_data.angular_velocity.z = ang0.z()*(M_PI/180.0);
 
   // Set linear acceleration
   imu0_data.linear_acceleration.x = lin0.x();
@@ -311,10 +315,11 @@ void loop() {
   imu1_data.orientation.z = quat1.z();
   imu1_data.orientation.w = quat1.w();
 
-  // Set angular velocity
-  imu1_data.angular_velocity.x = ang1.x();
-  imu1_data.angular_velocity.y = ang1.y();
-  imu1_data.angular_velocity.z = ang1.z();
+  // Set angular velocity (original data in Degrees Per Second, need to convert
+  // to Radians Per Second)
+  imu1_data.angular_velocity.x = ang1.x()*(M_PI/180.0);
+  imu1_data.angular_velocity.y = ang1.y()*(M_PI/180.0);
+  imu1_data.angular_velocity.z = ang1.z()*(M_PI/180.0);
 
   // Set linear acceleration
   imu1_data.linear_acceleration.x = lin1.x();

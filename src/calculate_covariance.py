@@ -21,9 +21,9 @@ class CalculateCovariance:
         #===== Test Standard Deviation Values =====#
         self.angle_std = 0
         self.lin_vel_std = 0
-        self.accel_std = 10000
-        self.gyro_std = 10000
-        self.orient_std = 10000
+        self.accel_std = 0
+        self.gyro_std = 0
+        self.orient_std = 0
         #==========================================#
 
         self.forklift_body_length = 2.5601
@@ -67,6 +67,12 @@ class CalculateCovariance:
         self.twist_pub.publish(msg)
 
     def imu0_callback(self, msg):
+        # Convert Gyro data from Degrees Per Second to Radians Per Second
+        # (only required if using data older than 2019-06-26)
+        msg.angular_velocity.x *= (math.pi/180.0)/8
+        msg.angular_velocity.y *= (math.pi/180.0)/8
+        msg.angular_velocity.z *= (math.pi/180.0)/8
+
         msg.orientation_covariance = [self.orient_std**2, 0, 0,
                                       0, self.orient_std**2, 0,
                                       0, 0, self.orient_std**2]
@@ -79,6 +85,12 @@ class CalculateCovariance:
         self.imu0_pub.publish(msg)
 
     def imu1_callback(self, msg):
+        # Convert Gyro data from Degrees Per Second to Radians Per Second
+        # (only required if using data older than 2019-06-26)
+        msg.angular_velocity.x *= (math.pi/180.0)/8
+        msg.angular_velocity.y *= (math.pi/180.0)/8
+        msg.angular_velocity.z *= (math.pi/180.0)/8
+
         msg.orientation_covariance = [self.orient_std**2, 0, 0,
                                       0, self.orient_std**2, 0,
                                       0, 0, self.orient_std**2]
