@@ -29,7 +29,7 @@ private:
 
     //----- Parameters
     // Forklift Dimensions
-    double forklift_length; // length of wheelbase {m}
+    double wheelbase; // length of wheelbase {m}
     double length_to_base; // length from front axle to base_link frame {m}
 
     // Motion variables
@@ -42,7 +42,7 @@ public:
     VelocityConversion() : nh_("~"), rate(30)
     {
         // Set parameters
-        nh_.param<double>("forklift/body/length", forklift_length, 2.5601);
+        nh_.param<double>("forklift/wheels/front_axle_to_back_axle", wheelbase, 1.7249);
         nh_.param<double>("length_to_base", length_to_base, 0); // length from the middle of the front axle to the base_link origin
         nh_.param<std::string>("base_link_frame", twist_frame, "base_link");
         nh_.param<double>("publish_frequency", publish_frequency, 30);
@@ -91,14 +91,16 @@ public:
     {
         angle = msg.data;
 
-        if (use_covariance) {
-            calculateTwistWithCov(twist_with_cov);
-            twist_with_cov_pub.publish(twist_with_cov);
-        }
-        else {
-            calculateTwist(twist);
-            twist_pub.publish(twist);
-        }
+        // // It is best to only send a twist when the velocity is updated because
+        // // it is the slowest signal at 4Hz
+        // if (use_covariance) {
+        //     calculateTwistWithCov(twist_with_cov);
+        //     twist_with_cov_pub.publish(twist_with_cov);
+        // }
+        // else {
+        //     calculateTwist(twist);
+        //     twist_pub.publish(twist);
+        // }
     }
 
     void calculateTwistWithCov(geometry_msgs::TwistWithCovarianceStamped &forklift_twist)
@@ -107,8 +109,8 @@ public:
         //velocity *= 1 + (angle/M_PI);
 
         // Calculate the linear velocity at the base_link
-        double v_b = velocity*sqrt(1 + pow((length_to_base/forklift_length)*tan(angle), 2));
-        double theta_dot = (velocity*(tan(angle)/forklift_length));
+        double v_b = velocity*sqrt(1 + pow((length_to_base/wheelbase)*tan(angle), 2));
+        double theta_dot = (velocity/wheelbase)*(-tan(angle));
 
         forklift_twist.header.stamp = ros::Time::now();
         forklift_twist.header.frame_id = twist_frame.c_str();
@@ -122,8 +124,8 @@ public:
         //velocity *= 1 + (angle/M_PI);
 
         // Calculate the linear velocity at the base_link
-        double v_b = velocity*sqrt(1 + pow((length_to_base/forklift_length)*tan(angle), 2));
-        double theta_dot = (velocity*(tan(angle)/forklift_length));
+        double v_b = velocity*sqrt(1 + pow((length_to_base/wheelbase)*tan(angle), 2));
+        double theta_dot = (velocity/wheelbase)*(-tan(angle));
 
         forklift_twist.linear.x = v_b;
         forklift_twist.angular.z = theta_dot;
