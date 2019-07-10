@@ -34,7 +34,7 @@ const int NUM_REPEATS = 3;
 //===== ROS Objects =====//
 ros::NodeHandle nh;
 std_msgs::Bool is_moving;
-ros::Publisher moving_pub("steering_node/motor/is_moving", &is_moving);
+ros::Publisher moving_pub("/steering_node/motor/is_moving", &is_moving);
 
 void setup() {
   // Set up ROS
