@@ -42,7 +42,7 @@ public:
     VelocityConversion() : nh_("~"), rate(30)
     {
         // Set parameters
-        nh_.param<double>("forklift/wheels/front_axle_to_back_axle", wheelbase, 1.7249);
+        nh_.param<double>("/forklift/wheels/front_axle_to_back_axle", wheelbase, 1.7249);
         nh_.param<double>("length_to_base", length_to_base, 0); // length from the middle of the front axle to the base_link origin
         nh_.param<std::string>("base_link_frame", twist_frame, "base_link");
         nh_.param<double>("publish_frequency", publish_frequency, 30);
