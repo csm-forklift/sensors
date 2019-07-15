@@ -10,7 +10,7 @@
 #include <std_msgs/Int16.h>
 #include <cmath>
 
-class SteeringNode
+class SteeringFeedback
 {
 private:
     // ROS Objects
@@ -31,12 +31,12 @@ private:
     double angle_bias; // Zero-offset of the angle, used to tune regression of it does not quite match exactly enough, defaults to 0 {rad}
 
 public:
-    SteeringNode() : nh_("~")
+    SteeringFeedback() : nh_("~")
     {
         // Set up ROS connections
-        raw_pot_sub = nh_.subscribe("/steering_node/potentiometer/raw_data", 10, &SteeringNode::rawPotCallback, this);
-        steering_angle_deg_pub = nh_.advertise<std_msgs::Float64>("filtered_angle_deg", 10);
-        steering_angle_pub = nh_.advertise<std_msgs::Float64>("filtered_angle", 10);
+        raw_pot_sub = nh_.subscribe("/steering_node/potentiometer/raw_data", 10, &SteeringFeedback::rawPotCallback, this);
+        steering_angle_deg_pub = nh_.advertise<std_msgs::Float64>("/steering_node/filtered_angle_deg", 10);
+        steering_angle_pub = nh_.advertise<std_msgs::Float64>("/steering_node/filtered_angle", 10);
 
         // Set up data parameters
         nh_.param<double>("filter_gain", filter_gain, 0.5);
@@ -100,8 +100,8 @@ public:
 
 int main(int argc, char** argv)
 {
-    ros::init(argc, argv, "steering_node");
-    SteeringNode steering_node;
+    ros::init(argc, argv, "steering_feedback");
+    SteeringFeedback steering_feedback;
 
     ros::spin();
 

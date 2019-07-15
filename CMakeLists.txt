@@ -145,7 +145,7 @@ include_directories(
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/sensors_node.cpp)
 add_executable(data_processing src/data_processing.cpp)
-add_executable(steering_node src/steering_node.cpp)
+add_executable(steering_feedback src/steering_feedback.cpp)
 add_executable(velocity_conversion src/velocity_conversion.cpp)
 add_executable(imu_viewer src/imu_viewer.cpp)
 
@@ -164,7 +164,7 @@ add_executable(imu_viewer src/imu_viewer.cpp)
 #   ${catkin_LIBRARIES}
 # )
 target_link_libraries(data_processing ${catkin_LIBRARIES})
-target_link_libraries(steering_node ${catkin_LIBRARIES})
+target_link_libraries(steering_feedback ${catkin_LIBRARIES})
 target_link_libraries(velocity_conversion ${catkin_LIBRARIES})
 target_link_libraries(imu_viewer ${catkin_LIBRARIES})
 

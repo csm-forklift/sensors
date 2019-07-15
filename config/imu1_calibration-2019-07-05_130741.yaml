@@ -1,6 +1,7 @@
 # Calibration file generated at 2019-07-05_130741
 # These values are loaded with the startup launch file and uploaded to the IMU
 # from the microcontroller.
+# IMU ID: 0519
 accel_offset_x: 14662
 accel_offset_y: 4
 accel_offset_z: 1
