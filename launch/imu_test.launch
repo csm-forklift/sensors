@@ -1,0 +1,10 @@
+<launch>
+
+    <<rosparam file="$(find sensors)/config/imu0_calibration.yaml" command="load" ns="imu0/calibration" />
+    <rosparam file="$(find sensors)/config/imu1_calibration.yaml" command="load" ns="imu1/calibration" />
+
+    <node pkg="rosserial_python" name="serial_node" type="serial_node.py">
+        <param name="port" value="/dev/ttyACM0"/>
+    </node>
+    
+</launch>
