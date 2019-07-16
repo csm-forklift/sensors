@@ -24,9 +24,10 @@ class CalculateCovariance:
         self.accel_std = 0
         self.gyro_std = 0
         self.orient_std = 0
+        self.scale_factor = 8
         #==========================================#
-    
-        // TODO: read this in as a parameter
+
+        # TODO: read this in as a parameter
         self.forklift_body_length = 2.5601
         self.velocity = 0
         self.angle = 0
@@ -70,9 +71,9 @@ class CalculateCovariance:
     def imu0_callback(self, msg):
         # Convert Gyro data from Degrees Per Second to Radians Per Second
         # (only required if using data older than 2019-06-26)
-        msg.angular_velocity.x *= (math.pi/180.0)/8
-        msg.angular_velocity.y *= (math.pi/180.0)/8
-        msg.angular_velocity.z *= (math.pi/180.0)/8
+        msg.angular_velocity.x /= self.scale_factor
+        msg.angular_velocity.y /= self.scale_factor
+        msg.angular_velocity.z /= self.scale_factor
 
         msg.orientation_covariance = [self.orient_std**2, 0, 0,
                                       0, self.orient_std**2, 0,
@@ -88,9 +89,9 @@ class CalculateCovariance:
     def imu1_callback(self, msg):
         # Convert Gyro data from Degrees Per Second to Radians Per Second
         # (only required if using data older than 2019-06-26)
-        msg.angular_velocity.x *= (math.pi/180.0)/8
-        msg.angular_velocity.y *= (math.pi/180.0)/8
-        msg.angular_velocity.z *= (math.pi/180.0)/8
+        msg.angular_velocity.x /= self.scale_factor
+        msg.angular_velocity.y /= self.scale_factor
+        msg.angular_velocity.z /= self.scale_factor
 
         msg.orientation_covariance = [self.orient_std**2, 0, 0,
                                       0, self.orient_std**2, 0,
