@@ -25,7 +25,8 @@ class CalculateCovariance:
         self.gyro_std = 0
         self.orient_std = 0
         #==========================================#
-
+    
+        // TODO: read this in as a parameter
         self.forklift_body_length = 2.5601
         self.velocity = 0
         self.angle = 0
