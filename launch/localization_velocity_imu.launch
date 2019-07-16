@@ -35,4 +35,11 @@
     <node pkg="tf" type="static_transform_publisher" name="imu1_broadcaster"
         args="-1.545 -0.477 1.857 0 0 0 1 base_link imu1_link 100" />
         
+    <!-- This node corrects the IMU gyro data with a scaling factor -->
+    <node pkg="sensors" name="calculate_covariance" type="calculate_covariance.py">
+        <remap from="/arduino/imu0_in" to="/arduino/imu0"/>
+        <remap from="/arduino/imu1_in" to="/arduino/imu1"/>
+        <remap from="/velocity_conversion/twist" to="/velocity_conversion/twist_in"/>
+    </node>
+        
 </launch>
