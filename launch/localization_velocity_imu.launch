@@ -39,7 +39,7 @@
     <node pkg="sensors" name="calculate_covariance" type="calculate_covariance.py">
         <remap from="/arduino/imu0_in" to="/arduino/imu0"/>
         <remap from="/arduino/imu1_in" to="/arduino/imu1"/>
-        <remap from="/velocity_conversion/twist" to="/velocity_conversion/twist_in"/>
+        <remap from="/velocity_conversion/twist_in" to="/velocity_conversion/twist"/>
     </node>
         
 </launch>
