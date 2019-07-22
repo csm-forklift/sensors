@@ -1,15 +1,22 @@
 <launch>
 
+    <!--==========================-->
+    <!-- Arguments and Parameters -->
+    <!--==========================-->
     <arg name="port_imu" default="/dev/ttyACM0" />
     <arg name="bus_name" default="slcan0" />
     
+    <!--=====================-->
     <!-- Begin velocity node -->
+    <!--=====================-->
     <node pkg="sensors" type="velocity_node.py" name="velocity_node" />
     
     <!-- Node for velocity conversion to Twist -->
     <node pkg="sensors" type="velocity_conversion" name="velocity_conversion" />
 
+    <!--================-->
     <!-- Begin IMU Node -->
+    <!--================-->
     <!-- Load Calibration Parameters -->
     <rosparam command="load" file="$(find sensors)/config/imu0_calibration.yaml" ns="imu0/calibration" />
     <rosparam command="load" file="$(find sensors)/config/imu1_calibration.yaml" ns="imu1/calibration" />
@@ -30,10 +37,13 @@
     y: -0.477
     z: 1.857
     -->
+    <!-- Only run these static transforms if you are not using 'setup_tf' package -->
+    <!--
     <node pkg="tf" type="static_transform_publisher" name="imu0_broadcaster" 
         args="-1.126 0 1.857 0 0 0 1 base_link imu0_link 100" />
     <node pkg="tf" type="static_transform_publisher" name="imu1_broadcaster"
         args="-1.545 -0.477 1.857 0 0 0 1 base_link imu1_link 100" />
+    -->
         
     <!-- This node corrects the IMU gyro data with a scaling factor -->
     <node pkg="sensors" name="calculate_covariance" type="calculate_covariance.py">
