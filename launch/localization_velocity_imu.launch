@@ -7,7 +7,7 @@
     <arg name="bus_name" default="slcan0" />
     
     <!--=====================-->
-    <!-- Begin velocity node -->
+    <!-- Begin Velocity Node -->
     <!--=====================-->
     <node pkg="sensors" type="velocity_node.py" name="velocity_node" />
     
