@@ -1,0 +1,27 @@
+<launch>
+
+    <!--==========================-->
+    <!-- Arguments and Parameters -->
+    <!--==========================-->
+    <arg name="port_clamp" default="/dev/ttyACM0"/>
+    <arg name="use_clamp_arduino" default="true"/>
+    <arg name="bus_name" default="slcan0"/>
+
+    <!--=====================-->
+    <!-- Begin Velocity Node -->
+    <!--=====================-->
+    <node pkg="sensors" type="velocity_node.py" name="velocity_node" />
+
+    <!-- Node for velocity conversion to Twist -->
+    <node pkg="sensors" type="velocity_conversion" name="velocity_conversion" />
+
+    <!--===============-->
+    <!-- Clamp Control -->
+    <!--===============-->
+    <!-- The arduino running this code should be a MEGA and should be running "grasping/src/clamp_switch/clamp_switch.ino", see file for wiring -->
+    <node if="$(arg use_clamp_arduino)" pkg="rosserial_python" name="clamp_node_arduino" type="serial_node.py" respawn="false">
+        <param name="port" value="$(arg port_clamp)" />
+        <param name="baud" value="19200"/>
+    </node>
+
+</launch>
