@@ -1,0 +1,30 @@
+This information was taken from this guide online: http://pascal-walter.blogspot.com/2015/08/installing-lawicel-canusb-on-linux.html
+
+Make sure you have the 'can-utils' package.
+
+$ sudo apt-get install can-utils
+
+Then load the needed 'can' kernel modules
+Check if they exist by using:
+
+$ lsmod | grep can
+
+Look for 'can', 'can_raw', and 'slcan'
+
+If any of these do not exist use:
+
+$ sudo modprobe [module]
+
+Replace [module] with the one that does not exist, i.e. sudo modprobe slcan
+
+To make them load automatically edit the /etc/modules folder
+
+$ sudo nano /etc/modules
+
+Add the three module names to the list, one on each line, then save.
+
+Now you should be ready to use the 'slcan_add.sh' and 'slcan_remove.sh' files.
+If you are having troubles getting it to connect, remove the USB from the CANbus
+device, run the 'slcan_remove.sh' command, then reinsert the CANbus USB device
+and rerun the 'slcan_add.sh' command. If all else fails, restart the computer
+and try again.
