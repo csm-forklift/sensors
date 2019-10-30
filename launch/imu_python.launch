@@ -1,4 +1,0 @@
-<launch>
-    <rosparam file="$(find sensors)/config/imu_calibration.yaml" command="load" ns="imu/calibration" />
-    <node pkg="sensors" name="imu_test3_pi" type="imu_test3_pi.py" respawn="true" output="screen" />
-</launch>
