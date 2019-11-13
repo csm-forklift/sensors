@@ -19,7 +19,7 @@
     <!-- Clamp Control -->
     <!--===============-->
     <!-- The arduino running this code should be a MEGA and should be running "grasping/src/clamp_switch/clamp_switch.ino", see file for wiring -->
-    <node if="$(arg use_clamp_arduino)" pkg="rosserial_python" name="clamp_node_arduino" type="serial_node.py" respawn="false">
+    <node if="$(arg use_clamp_arduino)" pkg="rosserial_python" name="clamp_switch_arduino" type="serial_node.py" respawn="false">
         <param name="port" value="$(arg port_clamp)" />
         <param name="baud" value="19200"/>
     </node>
